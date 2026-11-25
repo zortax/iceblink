@@ -187,7 +187,9 @@ impl Chain {
                 capabilities.max_image_extent.height.max(1),
             ),
         };
-        let wanted = FRAME_LATENCY + 1;
+        // A display server may hold a discarded buffer until the next one is shown, so with one
+        // image fewer a slow frame leaves none to acquire before the next latch.
+        let wanted = FRAME_LATENCY + 2;
         let count = match capabilities.max_image_count {
             0 => wanted.max(capabilities.min_image_count),
             most => wanted.max(capabilities.min_image_count).min(most),
