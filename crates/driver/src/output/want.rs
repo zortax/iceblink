@@ -17,7 +17,7 @@ impl Output {
             self.read_feedback(now_ns);
         }
         let deadline = self.deadline();
-        let budget = self.budget.get(self.schedule.interval_ns);
+        let budget = self.budget();
         self.schedule.ask(now_ns, deadline, budget);
     }
 
@@ -42,7 +42,7 @@ impl Output {
     /// one interval after its previous frame.
     pub(super) fn want(&mut self, now_ns: u64) {
         let deadline = self.deadline();
-        let budget = self.budget.get(self.schedule.interval_ns);
+        let budget = self.budget();
         self.schedule.want(now_ns, deadline, budget);
     }
 
@@ -50,7 +50,7 @@ impl Output {
     pub(super) fn wake_at(&mut self, wake: Option<u64>, now_ns: u64) {
         if let Some(wake) = wake {
             let deadline = self.deadline();
-            let budget = self.budget.get(self.schedule.interval_ns);
+            let budget = self.budget();
             self.schedule.wake(wake, now_ns, deadline, budget);
         }
     }
@@ -59,7 +59,7 @@ impl Output {
     /// `display_ns` it was built for while that is still ahead.
     pub(super) fn retry_held(&mut self, now_ns: u64, display_ns: u64) {
         let deadline = self.deadline();
-        let budget = self.budget.get(self.schedule.interval_ns);
+        let budget = self.budget();
         self.schedule.retry(now_ns, display_ns, deadline, budget);
     }
 
@@ -78,7 +78,7 @@ impl Output {
     /// Returns the latch and display time of the frame due, when a commit queued at `now_ns` goes
     /// into it, as [`Schedule::reach`](crate::output::schedule::Schedule::reach) decides.
     pub(crate) fn reach(&self, now_ns: u64) -> Option<(u64, u64)> {
-        let budget = self.budget.get(self.schedule.interval_ns);
+        let budget = self.budget();
         self.schedule.reach(now_ns, self.deadline, budget)
     }
 }

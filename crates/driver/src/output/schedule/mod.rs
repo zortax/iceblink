@@ -12,10 +12,9 @@ const FEEDBACK: u64 = 16;
 
 /// An output's frame schedule.
 ///
-/// A paced output's frame is built for a display time. Its lead is the budget plus one interval
-/// for each present the display holds besides the frame's, since a present made just after a
-/// refresh reaches the display that many refreshes later. When the frame latches depends on what
-/// wants it:
+/// A paced output's frame is built for a display time. Its lead is the budget plus the reach, how
+/// long before a refresh a present must be made to be shown at it. When the frame latches depends
+/// on what wants it:
 ///
 /// - If the presenter has deadlines, the frame latches at the deadline.
 /// - If a client's call wants the frame on an idle output, it latches immediately.
@@ -54,8 +53,10 @@ pub(crate) struct Schedule {
     /// The display's refreshes, which display times follow.
     anchor: Anchor,
     pub(crate) interval_ns: u64,
-    /// How many presents the display holds at once, at least one.
-    pub(crate) depth: u64,
+    /// How long before a refresh a present must be made to be shown at it.
+    pub(crate) reach_ns: u64,
+    /// How long before a refresh a present made later is certainly not shown at it.
+    pub(crate) too_late_ns: u64,
 }
 
 impl Schedule {
@@ -73,7 +74,8 @@ impl Schedule {
             early: None,
             anchor: Anchor::default(),
             interval_ns,
-            depth: 1,
+            reach_ns: 0,
+            too_late_ns: 0,
         }
     }
 
@@ -154,13 +156,13 @@ impl Schedule {
 
     /// Returns the lead of a paced frame with a budget of `budget_ns`.
     fn lead(&self, budget_ns: u64) -> u64 {
-        budget_ns + self.queued()
+        budget_ns + self.reach_ns
     }
 
-    /// Returns how long a present waits behind those the display holds: one interval for each
-    /// present it holds besides the frame's.
-    fn queued(&self) -> u64 {
-        self.depth.saturating_sub(1) * self.interval_ns
+    /// Returns how many refreshes after a refresh a present made just after it reaches the
+    /// display, at least one.
+    fn refreshes_ahead(&self) -> u64 {
+        self.reach_ns.div_ceil(self.interval_ns.max(1)).max(1)
     }
 
     /// Returns the earliest display time at or after `at` that follows the previous frame's.

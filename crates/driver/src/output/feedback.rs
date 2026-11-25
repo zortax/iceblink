@@ -16,36 +16,31 @@ impl Output {
     /// at `now_ns`.
     ///
     /// The interval then comes from the first source that has one, as [`Display::interval`]
-    /// picks it, and the depth from the presenter. When the refreshes moved, the interval changed
-    /// or the depth changed, the due frame moves onto the new refreshes. When the newest frame was
+    /// picks it, and the reach from the display. When the refreshes moved, the interval changed
+    /// or the reach changed, the due frame moves onto the new refreshes. When the newest frame was
     /// shown earlier than planned, the due frame moves to an earlier refresh.
     ///
     /// [`Display::interval`]: crate::output::display::Display::interval
     pub(super) fn read_feedback(&mut self, now_ns: u64) {
-        let before = (self.schedule.grid(), self.schedule.depth);
+        let before = (self.schedule.grid(), self.schedule.reach_ns);
         let presenter = self.renderer.presenter();
         let known = presenter
             .as_ref()
             .and_then(|presenter| presenter.refresh_ns())
             .or(self.refresh);
-        self.schedule.depth = presenter
-            .as_ref()
-            .map_or(1, |presenter| u64::from(presenter.display_depth().max(1)));
         let earlier = presenter.is_some_and(|presenter| {
-            self.display.read(
-                presenter,
-                known,
-                &mut self.reported,
-                &mut self.schedule,
-                &mut self.budget,
-            )
+            self.display
+                .read(presenter, known, &mut self.reported, &mut self.schedule)
         });
 
         self.schedule.interval_ns = self.display.interval(known);
-        let changed = !same_grid(before.0, self.schedule.grid()) || before.1 != self.schedule.depth;
+        self.schedule.reach_ns = self.display.reach(self.schedule.interval_ns);
+        self.schedule.too_late_ns = self.display.too_late();
+        let changed =
+            !same_grid(before.0, self.schedule.grid()) || before.1 != self.schedule.reach_ns;
         if changed || earlier {
             let deadline = self.deadline();
-            let budget = self.budget.get(self.schedule.interval_ns);
+            let budget = self.budget();
             if changed {
                 self.schedule.replan(now_ns, deadline, budget);
             }

@@ -84,9 +84,9 @@ impl Schedule {
     ///
     /// A paced output without a presenter deadline counts a refresh up to a sixteenth of an
     /// interval before `present_ns` as reaching it. Such an output latches the frame just after
-    /// the refresh from which a present reaches the display at its display time, or one lead
-    /// before the display time when that is earlier, so the frame of the compositor's own motion
-    /// has the most time to reach the display.
+    /// the latest refresh from which a present made then still reaches the display at its display
+    /// time, or one lead before the display time when that is earlier, so the frame of the
+    /// compositor's own motion has the most time to reach the display.
     pub(crate) fn wake(
         &mut self,
         present_ns: u64,
@@ -107,7 +107,8 @@ impl Schedule {
                         let wanted = present_ns.saturating_sub(self.interval_ns / SNAP);
                         let lead = self.lead(budget_ns);
                         let target = self.refresh_after(wanted.max(now_ns + lead));
-                        let after_refresh = target.saturating_sub(self.interval_ns + self.queued())
+                        let after_refresh = target
+                            .saturating_sub(self.refreshes_ahead() * self.interval_ns)
                             + self.interval_ns / FEEDBACK;
                         (after_refresh.min(target - lead), target, wanted)
                     }
@@ -125,8 +126,8 @@ impl Schedule {
     }
 
     /// Wants a frame the platform held again, a millisecond from `now_ns`, while more than two
-    /// milliseconds remain before it must be presented to reach the display time `display_ns` it
-    /// was built for.
+    /// milliseconds remain before a present is certainly too late for the display time
+    /// `display_ns` it was built for.
     ///
     /// Otherwise, and on a stepped output or one that follows presenter deadlines, the next frame
     /// is wanted as [`want`](Self::want) does.
@@ -137,7 +138,7 @@ impl Schedule {
         deadline: Option<u64>,
         budget_ns: u64,
     ) {
-        let presented_by = display_ns.saturating_sub(self.queued());
+        let presented_by = display_ns.saturating_sub(self.too_late_ns);
         if self.pacing == Pacing::Paced
             && deadline.is_none()
             && now_ns + 2 * RETRY_NS < presented_by

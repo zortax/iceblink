@@ -1,6 +1,6 @@
 //! A paced driver measures the display's refreshes from the times its presents reached the
-//! display, as its presenter or its client reports them, and grows its budget when frames miss the
-//! refresh they were built for. Reports that come late or get lost move neither.
+//! display, as its presenter or its client reports them, and how long before a refresh a present
+//! must be made to be shown at it. Reports that come late or get lost move neither.
 
 mod common;
 
@@ -31,9 +31,20 @@ const UNTOLD: Told = Told {
     gate_ns: None,
 };
 
+/// A display whose times the client reports, which answer no present, so the lead is the budget
+/// and a reach of 3 ms.
+const REPORTED: Told = Told {
+    client_reports: true,
+    ..UNTOLD
+};
+
+/// The lead of frames that cost nothing on a display whose times the client reports: the floor of
+/// the budget and the reach before any present was measured.
+const LIGHT_LEAD_NS: u64 = 4_000_000;
+
 /// Runs `FRAMES` frames that each commit a change, pumping the driver whenever a frame latches,
 /// on a display that takes images `takes_ns` before a refresh and reports its presents with
-/// `report`. Returns what the display showed and the budget of a frame wanted after the last.
+/// `report`. Returns what the display showed and the lead of a frame wanted after the last.
 fn run(takes_ns: u64, report: Report) -> (Vec<(u64, u64)>, u64) {
     run_told(&UNTOLD, FRAMES, |_| 0, takes_ns, report)
 }
@@ -54,8 +65,8 @@ fn run_told(
     }
     rig.commit(frames as u64);
     let stats = rig.driver.stats();
-    let budget = stats.next_display_ns.unwrap_or(0) - stats.next_due_ns.unwrap_or(0);
-    (rig.shown(), budget)
+    let lead = stats.next_display_ns.unwrap_or(0) - stats.next_due_ns.unwrap_or(0);
+    (rig.shown(), lead)
 }
 
 #[test]
@@ -205,7 +216,26 @@ fn frames_on_a_display_that_holds_two_presents_are_built_for_the_refresh_that_sh
 }
 
 #[test]
-fn missed_refreshes_grow_the_budget() {
+fn a_display_that_takes_frames_just_under_a_refresh_early_costs_no_extra_refresh() {
+    let takes = PERIOD_NS - QUICK_NS;
+    let (shown, lead) = run_told(&TOLD, 2 * FRAMES, |_| 0, takes, on_time);
+    // The frames before lower the reach until two of them miss.
+    let missed: Vec<_> = shown[FRAMES * 3 / 2..]
+        .iter()
+        .filter(|(planned, shown)| planned != shown)
+        .collect();
+    assert!(
+        missed.is_empty(),
+        "every later frame is shown at the refresh it was built for, missed: {missed:?}"
+    );
+    assert!(
+        lead < takes + PERIOD_NS / 4,
+        "frames latch about as long before their refresh as the display takes them: {lead}"
+    );
+}
+
+#[test]
+fn frames_reach_a_display_that_takes_them_early() {
     let (shown, _) = run(TAKES_NS, on_time);
     let missed: Vec<_> = shown[FRAMES / 2..]
         .iter()
@@ -235,11 +265,17 @@ fn late_reports_keep_the_frames_on_the_refreshes() {
 
 #[test]
 fn a_lost_report_counts_no_frame_as_missed() {
-    let (_, budget) = run(0, |index, shown| (index != FRAMES / 2).then_some(shown));
-    assert_eq!(
-        budget, 4_000_000,
-        "the frames after a lost report are answered by their own reports, so the budget keeps \
-         its floor"
+    let (shown, _) = run(TAKES_NS, |index, shown| {
+        (index % 4 != 0 || index < FRAMES / 4).then_some(shown)
+    });
+    let missed: Vec<_> = shown[FRAMES / 2..]
+        .iter()
+        .filter(|(planned, shown)| planned != shown)
+        .collect();
+    assert!(
+        missed.is_empty(),
+        "the frames after a lost report are answered by their own reports, so they reach the \
+         refresh they were built for: {missed:?}"
     );
 }
 
@@ -265,39 +301,38 @@ fn a_reported_refresh_is_kept_when_the_assumed_one_divides_it() {
 
 #[test]
 fn one_heavy_frame_leaves_the_budget_to_the_light_frames() {
-    let (_, budget) = run_told(
-        &UNTOLD,
+    let (_, lead) = run_told(
+        &REPORTED,
         FRAMES,
         |index| if index == FRAMES - 4 { 12_000_000 } else { 0 },
         0,
         on_time,
     );
-    // The heavy frame misses its refresh, which its cost explains.
     assert_eq!(
-        budget, 4_000_000,
+        lead, LIGHT_LEAD_NS,
         "four light frames after a heavy one keep the budget at the floor"
     );
 }
 
 #[test]
 fn sustained_heavy_frames_grow_the_budget() {
-    let (_, budget) = run_told(
-        &UNTOLD,
+    let (_, lead) = run_told(
+        &REPORTED,
         FRAMES,
         |index| if index >= FRAMES - 8 { 8_000_000 } else { 0 },
         0,
         on_time,
     );
     assert!(
-        budget >= 10_000_000,
-        "eight frames of 8 ms grow the budget to their cost and a quarter: {budget}"
+        lead >= 10_000_000 + LIGHT_LEAD_NS - 1_000_000,
+        "eight frames of 8 ms grow the budget to their cost and a quarter: {lead}"
     );
 }
 
 #[test]
 fn the_first_frame_leaves_the_budget_alone() {
-    let (_, budget) = run_told(
-        &UNTOLD,
+    let (_, lead) = run_told(
+        &REPORTED,
         6,
         |index| {
             if index == 0 || index == 2 {
@@ -309,9 +344,11 @@ fn the_first_frame_leaves_the_budget_alone() {
         0,
         on_time,
     );
-    assert!(
-        budget <= 5_000_000,
-        "an expensive first frame and one heavy frame after it keep the budget at the floor, \
-         and at most one miss above it: {budget}"
+    // The first frame counts the floor of 1 ms, and the heavy frame is the slowest.
+    assert_eq!(
+        lead,
+        LIGHT_LEAD_NS + 250_000,
+        "an expensive first frame and one heavy frame after it keep the budget at the floor and \
+         a quarter"
     );
 }

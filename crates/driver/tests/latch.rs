@@ -1,6 +1,6 @@
-//! A paced driver latches a frame one budget before the refresh it is built for, just after the
-//! refresh before it for the compositor's own motion, and immediately for a call on an idle
-//! output.
+//! A paced driver latches a frame one lead, the budget and the reach, before the refresh it is
+//! built for, just after the refresh before it for the compositor's own motion, and immediately
+//! for a call on an idle output.
 
 mod common;
 
@@ -24,6 +24,10 @@ const PERIOD_NS: u64 = 40 * MS;
 
 /// The latch budget.
 const BUDGET_NS: u64 = 6 * MS;
+
+/// The lead of a display that reports no presents, which keeps the reach of 3 ms the driver
+/// assumes before it measured one.
+const LEAD_NS: u64 = BUDGET_NS + 3 * MS;
 
 /// Spawns a driver with a fixed budget and opens a list on a display that reports its refreshes
 /// only as feedback, once the list's first frame is drawn.
@@ -56,7 +60,7 @@ fn an_idle_commit_is_built_at_once() {
         let frame = probe.wait_draws(drawn + 1)[drawn].clock;
         assert!(
             frame.now_ns < after + 5 * MS,
-            "the frame is built at once, not at the latch one budget before its refresh, \
+            "the frame is built at once, not at the latch one lead before its refresh, \
              {frame:?}, commit between {before} and {after}"
         );
         assert_eq!(
@@ -65,9 +69,8 @@ fn an_idle_commit_is_built_at_once() {
             "the frame is built for a refresh of the display, {frame:?}"
         );
         assert!(
-            frame.present_ns >= before + BUDGET_NS
-                && frame.present_ns < after + BUDGET_NS + PERIOD_NS,
-            "the frame is built for the refresh it would latch for one budget before, {frame:?}, \
+            frame.present_ns >= before + LEAD_NS && frame.present_ns < after + LEAD_NS + PERIOD_NS,
+            "the frame is built for the refresh it would latch for one lead before, {frame:?}, \
              commit between {before} and {after}"
         );
     }
@@ -98,8 +101,8 @@ fn a_client_that_commits_for_every_refresh_keeps_the_latch() {
     // The first commit found the output idle.
     for frame in &frames[1..] {
         assert!(
-            frame.now_ns >= frame.present_ns - BUDGET_NS,
-            "a frame after one shown at the latest refresh latches one budget before its \
+            frame.now_ns >= frame.present_ns - LEAD_NS,
+            "a frame after one shown at the latest refresh latches one lead before its \
              refresh, {frames:?}"
         );
     }
@@ -167,7 +170,7 @@ fn a_commit_during_an_animation_keeps_the_latch() {
         );
         assert!(
             frame.now_ns >= refresh - PERIOD_NS + PERIOD_NS / 16
-                && frame.now_ns < refresh - BUDGET_NS,
+                && frame.now_ns < refresh - LEAD_NS,
             "the frame latches just after the refresh before its own, {frame:?}"
         );
         assert!(

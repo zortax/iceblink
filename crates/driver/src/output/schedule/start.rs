@@ -8,16 +8,17 @@ use crate::output::schedule::{FEEDBACK, Schedule};
 impl Schedule {
     /// Starts the due frame of a paced output at `now_ns` and returns its clock.
     ///
-    /// Without an anchor the frame may reach the display as soon as it is drawn and the presents
-    /// the display holds before it are shown, so the frames after it are spaced from then.
+    /// A frame that starts too late for the display time it was planned for is built for the next
+    /// one it can reach. Without an anchor, the frames after it are spaced from the earliest time
+    /// it may reach the display.
     pub(crate) fn start(&mut self, now_ns: u64, budget_ns: u64) -> FrameClock {
-        let present_ns = if now_ns + self.queued() < self.target {
+        let present_ns = if now_ns + self.too_late_ns < self.target {
             self.target
         } else {
             self.refresh_after(now_ns + self.lead(budget_ns))
         };
         self.early = (self.pacing == Pacing::Paced && self.anchored())
-            .then(|| self.refresh_after(now_ns + self.queued()))
+            .then(|| self.refresh_after(now_ns + self.too_late_ns))
             .filter(|&earliest| earliest < present_ns)
             .map(|earliest| earliest + self.interval_ns / FEEDBACK);
         self.park();
@@ -25,7 +26,7 @@ impl Schedule {
         self.previous = Some(if self.anchored() {
             present_ns
         } else {
-            now_ns + self.queued()
+            now_ns + self.too_late_ns
         });
         self.shown = Some(present_ns);
         FrameClock {

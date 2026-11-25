@@ -81,18 +81,21 @@ impl Output {
         options: &DriverOptions,
     ) -> Self {
         renderer.configure(target(config));
+        let display = Display::new(options.interval_ns);
+        let mut schedule = Schedule::new(options.pacing, options.interval_ns);
+        schedule.reach_ns = display.reach(options.interval_ns);
         Self {
             id,
             renderer,
             frame: Frame::default(),
             pacing: options.pacing,
-            schedule: Schedule::new(options.pacing, options.interval_ns),
+            schedule,
             budget: Budget::new(options.budget_ns),
             unpresented: false,
             fresh: true,
             started: false,
             deferred: None,
-            display: Display::new(options.interval_ns),
+            display,
             subpixel: None,
             refresh: None,
             reported: Vec::new(),
@@ -199,6 +202,12 @@ impl Output {
 
     pub(crate) fn extra_stats(&self, out: &mut dyn FnMut(&'static str, u64)) {
         self.renderer.extra_stats(out);
+    }
+
+    /// Returns the latch budget of a paced frame.
+    fn budget(&self) -> u64 {
+        self.budget
+            .get(self.schedule.interval_ns, self.schedule.reach_ns)
     }
 }
 

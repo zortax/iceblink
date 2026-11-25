@@ -28,17 +28,18 @@ impl Output {
         } else {
             self.schedule.due().unwrap_or(now_ns).min(now_ns)
         };
-        let budget = self.budget.get(self.schedule.interval_ns);
+        let budget = self.budget();
         let clock = self.schedule.start(now_ns, budget);
         let drawn = self.draw(compositor, clock);
         if drawn.is_none() {
             self.schedule.showed_nothing();
         }
 
-        let within = match &drawn {
-            Some(drawn) if drawn.built => self.measure(latch, budget),
-            _ => true,
-        };
+        if let Some(drawn) = &drawn
+            && drawn.built
+        {
+            self.measure(latch);
+        }
         if let Some(drawn) = &drawn
             && matches!(drawn.outcome, FrameOutcome::Presented(_))
         {
@@ -46,17 +47,20 @@ impl Output {
                 .renderer
                 .presenter()
                 .map_or(0, |presenter| presenter.presents());
-            // A frame that latched immediately was not given the budget.
-            let judged = self.schedule.anchored() && within && !at_once;
-            self.display.presented(present, clock.present_ns, judged);
+            let made = iceblink::now_ns();
+            // A frame that latched immediately was not given the lead.
+            let judged = self.schedule.anchored()
+                && !at_once
+                && made + self.schedule.reach_ns <= clock.present_ns;
+            self.display
+                .presented(present, clock.present_ns, made, judged);
         }
         self.read_feedback(iceblink::now_ns());
         drawn
     }
 
-    /// Takes the cost of a frame drawn now, which latched at `latch`, into the budget, and reports
-    /// whether the frame was drawn within `budget_ns`.
-    fn measure(&mut self, latch: u64, budget_ns: u64) -> bool {
+    /// Takes the cost of a frame drawn now, which latched at `latch`, into the budget.
+    fn measure(&mut self, latch: u64) {
         // The cost runs from the latch, so a late start counts against the budget.
         let waited = u64::try_from(self.renderer.acquire_block().as_nanos()).unwrap_or(0);
         let cost = iceblink::now_ns().saturating_sub(latch + waited);
@@ -66,7 +70,6 @@ impl Output {
         } else {
             self.budget.measure(cost);
         }
-        cost <= budget_ns
     }
 
     /// Runs the frame of a stepped output at `clock`.
