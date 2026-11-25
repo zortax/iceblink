@@ -1,0 +1,39 @@
+[package]
+name = "iceblink-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "The reference compositor, with its content cache, frame planner and motion arithmetic"
+rust-version.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+bytemuck.workspace = true
+iceblink.workspace = true
+iceblink-alloc.workspace = true
+kurbo.workspace = true
+rustc-hash.workspace = true
+smallvec.workspace = true
+tracing.workspace = true
+web-time.workspace = true
+zeno.workspace = true
+
+[dev-dependencies]
+criterion.workspace = true
+iceblink-testing.workspace = true
+iceblink-text.workspace = true
+iceblink-wgpu.workspace = true
+proptest.workspace = true
+skrifa.workspace = true
+
+[[bench]]
+name = "frames"
+harness = false
+
+[[bench]]
+name = "tier"
+harness = false
+
+[lints]
+workspace = true

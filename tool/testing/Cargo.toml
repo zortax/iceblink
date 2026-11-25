@@ -1,0 +1,22 @@
+[package]
+name = "iceblink-testing"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Shared fakes, fixtures, drivers and conformance suites, a recording renderer and a second, naive compositor"
+publish = false
+
+[dependencies]
+iceblink.workspace = true
+iceblink-wgpu.workspace = true
+png.workspace = true
+pollster.workspace = true
+smallvec.workspace = true
+wgpu.workspace = true
+zeno.workspace = true
+
+[dev-dependencies]
+iceblink-text.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,21 @@
+[package]
+name = "iceblink-examples"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Window demos drawn through the reference compositor and renderer"
+publish = false
+
+[dependencies]
+iceblink.workspace = true
+iceblink-core.workspace = true
+iceblink-driver.workspace = true
+iceblink-testing.workspace = true
+iceblink-text = { workspace = true, features = ["typeset"] }
+iceblink-wgpu.workspace = true
+skrifa.workspace = true
+tracing.workspace = true
+winit.workspace = true
+
+[lints]
+workspace = true

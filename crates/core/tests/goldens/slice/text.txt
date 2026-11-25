@@ -1,0 +1,100 @@
+frame 1
+output 1 size=128x128 scale=1 opaque
+damage draw=full present=full
+work 6
+  note reset_all
+  note inserted 1 quads=1
+  table spaces replace=1
+  table clips replace=0
+  table paints replace=1
+  table params replace=0
+batches 1
+  quads 0..1 ink=rect(0, 0, 128, 128)
+    quad bounds=rect(0, 0, 128, 128) fill=solid premul[1, 1, 1, 1]
+cover rect(1, 1, 126, 126) batch=0 at=0
+
+frame 2
+output 1 size=128x128 scale=1 opaque
+damage draw=[rect(4, 0, 124, 128)] present=[rect(4, 0, 124, 128)]
+work 8
+  page create 0 a8 1024x1024
+  page upload 0 rect(768, 0, 10, 12) bytes=316
+  page upload 0 rect(778, 0, 2, 13) bytes=316
+  page upload 0 rect(780, 0, 9, 10) bytes=316
+  page upload 0 rect(789, 0, 8, 10) bytes=316
+  note inserted 2 mono=5
+  note inserted 3
+  table paints changed=[1, 2]
+batches 3
+  quads 0..1 ink=rect(0, 0, 128, 128)
+    quad bounds=rect(0, 0, 128, 128) fill=solid premul[1, 1, 1, 1]
+  mono page0 0..5 ink=rect(9, 11, 38, 14)
+    mono bounds=rect(9, 12, 10, 12) paint=solid premul[0, 0, 0, 1] tile=page0[768, 0, 10, 12]
+    mono bounds=rect(20, 15, 8, 10) paint=solid premul[0, 0, 0, 1] tile=page0[789, 0, 8, 10]
+    mono bounds=rect(30, 11, 2, 13) paint=solid premul[0, 0, 0, 1] tile=page0[778, 0, 2, 13]
+    mono bounds=rect(34, 11, 2, 13) paint=solid premul[0, 0, 0, 1] tile=page0[778, 0, 2, 13]
+    mono bounds=rect(38, 15, 9, 10) paint=solid premul[0, 0, 0, 1] tile=page0[780, 0, 9, 10]
+  paths pass=0 region=rect(0, 0, 128, 128) instanced overhangs
+    path ink=rect(4, -96, 192, 216) fill=solid premul[0.7, 0, 0, 1] rule=nonzero transform=[1, 0, 0, 1, 4, 120] brush=[1, 0, 0, 1, -4, -120] d="M 163.5,0 L 137.7031,-66.2969 L 52.7969,-66.2969 L 27.2969,0 L 0,0 L 83.7031,-215.0938 L 108,-215.0938 L 191.4062,0 Z M 105.5938,-155.0938 Q 104.7031,-157.5 102.5938,-163.7969 Q 100.5,-170.0938 98.5469,-176.8438 Q 96.5938,-183.5938 95.4062,-187.2031 Q 93.2969,-177.9062 90.5938,-169.0469 Q 87.9062,-160.2031 86.0938,-155.0938 L 61.7969,-90.2969 L 129.5938,-90.2969 Z"
+cover rect(1, 1, 126, 126) batch=0 at=0
+
+frame 3
+output 1 size=128x128 scale=1 opaque
+damage draw=[rect(9, 11, 78, 16)] present=[rect(9, 11, 78, 16)]
+work 6
+  page upload 0 rect(797, 0, 2, 12) bytes=179
+  page upload 0 rect(799, 0, 7, 10) bytes=179
+  page upload 0 rect(806, 0, 7, 10) bytes=179
+  page upload 0 rect(896, 16, 3, 5) bytes=179
+  note retired 2
+  note inserted 4 mono=11
+batches 3
+  quads 0..1 ink=rect(0, 0, 128, 128)
+    quad bounds=rect(0, 0, 128, 128) fill=solid premul[1, 1, 1, 1]
+  mono page0 0..11 ink=rect(9, 11, 78, 16)
+    mono bounds=rect(9, 12, 10, 12) paint=solid premul[0, 0, 0, 1] tile=page0[768, 0, 10, 12]
+    mono bounds=rect(20, 15, 8, 10) paint=solid premul[0, 0, 0, 1] tile=page0[789, 0, 8, 10]
+    mono bounds=rect(30, 11, 2, 13) paint=solid premul[0, 0, 0, 1] tile=page0[778, 0, 2, 13]
+    mono bounds=rect(34, 11, 2, 13) paint=solid premul[0, 0, 0, 1] tile=page0[778, 0, 2, 13]
+    mono bounds=rect(38, 15, 9, 10) paint=solid premul[0, 0, 0, 1] tile=page0[780, 0, 9, 10]
+    mono bounds=rect(47, 22, 3, 5) paint=solid premul[0, 0, 0, 1] tile=page0[896, 16, 3, 5]
+    mono bounds=rect(56, 15, 7, 10) paint=solid premul[0, 0, 0, 1] tile=page0[806, 0, 7, 10]
+    mono bounds=rect(64, 11, 2, 13) paint=solid premul[0, 0, 0, 1] tile=page0[778, 0, 2, 13]
+    mono bounds=rect(68, 12, 2, 12) paint=solid premul[0, 0, 0, 1] tile=page0[797, 0, 2, 12]
+    mono bounds=rect(72, 15, 7, 10) paint=solid premul[0, 0, 0, 1] tile=page0[799, 0, 7, 10]
+    mono bounds=rect(79, 15, 8, 10) paint=solid premul[0, 0, 0, 1] tile=page0[789, 0, 8, 10]
+  paths pass=0 region=rect(0, 0, 96, 32) instanced clamped overhangs
+    path ink=rect(4, -96, 192, 216) fill=solid premul[0.7, 0, 0, 1] rule=nonzero transform=[1, 0, 0, 1, 4, 120] brush=[1, 0, 0, 1, -4, -120] d="M 163.5,0 L 137.7031,-66.2969 L 52.7969,-66.2969 L 27.2969,0 L 0,0 L 83.7031,-215.0938 L 108,-215.0938 L 191.4062,0 Z M 105.5938,-155.0938 Q 104.7031,-157.5 102.5938,-163.7969 Q 100.5,-170.0938 98.5469,-176.8438 Q 96.5938,-183.5938 95.4062,-187.2031 Q 93.2969,-177.9062 90.5938,-169.0469 Q 87.9062,-160.2031 86.0938,-155.0938 L 61.7969,-90.2969 L 129.5938,-90.2969 Z"
+cover rect(1, 1, 126, 126) batch=0 at=0
+
+frame 4
+output 1 size=128x128 scale=1 opaque
+damage draw=[rect(9, 11, 79, 26)] present=[rect(9, 11, 79, 26)]
+work 9
+  page upload 0 rect(899, 16, 4, 5) bytes=513
+  page upload 0 rect(813, 0, 8, 10) bytes=513
+  page upload 0 rect(821, 0, 9, 12) bytes=513
+  page upload 0 rect(830, 0, 3, 12) bytes=513
+  page upload 0 rect(833, 0, 3, 13) bytes=513
+  page upload 0 rect(836, 0, 7, 10) bytes=513
+  page upload 0 rect(843, 0, 9, 10) bytes=513
+  page upload 0 rect(852, 0, 7, 10) bytes=513
+  note inserted 5 mono=11
+batches 3
+  quads 0..1 ink=rect(0, 0, 128, 128)
+    quad bounds=rect(0, 0, 128, 128) fill=solid premul[1, 1, 1, 1]
+  mono page0 0..11 ink=rect(10, 21, 78, 16)
+    mono bounds=rect(10, 22, 9, 12) paint=solid premul[0, 0, 0, 1] tile=page0[821, 0, 9, 12] paint_origin=[0.5, 10]
+    mono bounds=rect(21, 25, 8, 10) paint=solid premul[0, 0, 0, 1] tile=page0[813, 0, 8, 10] paint_origin=[0.5, 10]
+    mono bounds=rect(30, 21, 3, 13) paint=solid premul[0, 0, 0, 1] tile=page0[833, 0, 3, 13] paint_origin=[0.5, 10]
+    mono bounds=rect(34, 21, 3, 13) paint=solid premul[0, 0, 0, 1] tile=page0[833, 0, 3, 13] paint_origin=[0.5, 10]
+    mono bounds=rect(38, 25, 9, 10) paint=solid premul[0, 0, 0, 1] tile=page0[843, 0, 9, 10] paint_origin=[0.5, 10]
+    mono bounds=rect(47, 32, 4, 5) paint=solid premul[0, 0, 0, 1] tile=page0[899, 16, 4, 5] paint_origin=[0.5, 10]
+    mono bounds=rect(56, 25, 7, 10) paint=solid premul[0, 0, 0, 1] tile=page0[852, 0, 7, 10] paint_origin=[0.5, 10]
+    mono bounds=rect(64, 21, 3, 13) paint=solid premul[0, 0, 0, 1] tile=page0[833, 0, 3, 13] paint_origin=[0.5, 10]
+    mono bounds=rect(68, 22, 3, 12) paint=solid premul[0, 0, 0, 1] tile=page0[830, 0, 3, 12] paint_origin=[0.5, 10]
+    mono bounds=rect(72, 25, 7, 10) paint=solid premul[0, 0, 0, 1] tile=page0[836, 0, 7, 10] paint_origin=[0.5, 10]
+    mono bounds=rect(80, 25, 8, 10) paint=solid premul[0, 0, 0, 1] tile=page0[813, 0, 8, 10] paint_origin=[0.5, 10]
+  paths pass=0 region=rect(0, 0, 96, 48) instanced clamped overhangs
+    path ink=rect(4, -96, 192, 216) fill=solid premul[0.7, 0, 0, 1] rule=nonzero transform=[1, 0, 0, 1, 4, 120] brush=[1, 0, 0, 1, -4, -120] d="M 163.5,0 L 137.7031,-66.2969 L 52.7969,-66.2969 L 27.2969,0 L 0,0 L 83.7031,-215.0938 L 108,-215.0938 L 191.4062,0 Z M 105.5938,-155.0938 Q 104.7031,-157.5 102.5938,-163.7969 Q 100.5,-170.0938 98.5469,-176.8438 Q 96.5938,-183.5938 95.4062,-187.2031 Q 93.2969,-177.9062 90.5938,-169.0469 Q 87.9062,-160.2031 86.0938,-155.0938 L 61.7969,-90.2969 L 129.5938,-90.2969 Z"
+cover rect(1, 1, 126, 126) batch=0 at=0

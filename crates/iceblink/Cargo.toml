@@ -1,0 +1,21 @@
+[package]
+name = "iceblink"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "The interface of iceblink: geometry, colour, damage, and the value types and traits of the shared compositor contract"
+rust-version.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+bytemuck.workspace = true
+kurbo.workspace = true
+smallvec.workspace = true
+web-time.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true
+
+[lints]
+workspace = true

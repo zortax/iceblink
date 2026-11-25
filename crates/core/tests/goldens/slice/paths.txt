@@ -1,0 +1,43 @@
+frame 1
+output 1 size=128x128 scale=1 opaque
+damage draw=full present=full
+work 6
+  note reset_all
+  note inserted 1 quads=1
+  table spaces replace=1
+  table clips replace=0
+  table paints replace=1
+  table params replace=0
+batches 1
+  quads 0..1 ink=rect(0, 0, 128, 128)
+    quad bounds=rect(0, 0, 128, 128) fill=solid premul[1, 1, 1, 1]
+cover rect(1, 1, 126, 126) batch=0 at=0
+
+frame 2
+output 1 size=128x128 scale=1 opaque
+damage draw=[rect(7, 12, 114, 116)] present=[rect(7, 12, 114, 116)]
+work 4
+  page create 0 a8 1024x1024
+  page upload 0 rect(0, 0, 24, 24) bytes=576
+  note inserted 2 mono=1
+  table paints changed=[1, 2, 3]
+batches 3
+  quads 0..1 ink=rect(0, 0, 128, 128)
+    quad bounds=rect(0, 0, 128, 128) fill=solid premul[1, 1, 1, 1]
+  paths pass=0 region=rect(0, 32, 128, 96) instanced overhangs
+    path ink=rect(7, 39, 114, 122) fill=linear from=(0, 0) to=(60, 0) in oklab stops=[[0.628, 0.2249, 0.1258, 1]@0, [0.452, -0.0325, -0.3115, 1]@1] rule=evenodd stroke=solid premul[0, 0, 0, 1] width=2 d="M 8,100 C 40,40 80,160 120,70 L 120,120 Z"
+  mono page0 0..1 ink=rect(12, 12, 24, 24)
+    mono bounds=rect(12, 12, 24, 24) paint=solid premul[0, 0.6, 0.2, 1] tile=page0[0, 0, 24, 24]
+cover rect(1, 1, 126, 126) batch=0 at=0
+
+frame 3
+output 1 size=128x128 scale=1 opaque
+damage draw=[rect(7, 8, 121, 120)] present=[rect(7, 8, 121, 120)]
+batches 3
+  quads 0..1 ink=rect(0, 0, 128, 128)
+    quad bounds=rect(0, 0, 128, 128) fill=solid premul[1, 1, 1, 1]
+  paths pass=0 region=rect(16, 32, 112, 96) instanced overhangs
+    path ink=rect(17, 35, 114, 122) fill=linear from=(0, 0) to=(60, 0) in oklab stops=[[0.628, 0.2249, 0.1258, 1]@0, [0.452, -0.0325, -0.3115, 1]@1] rule=evenodd stroke=solid premul[0, 0, 0, 1] width=2 transform=[1, 0, 0, 1, 10, -4] d="M 8,100 C 40,40 80,160 120,70 L 120,120 Z"
+  mono page0 0..1 ink=rect(22, 8, 24, 24)
+    mono bounds=rect(22, 8, 24, 24) paint=solid premul[0, 0.6, 0.2, 1] tile=page0[0, 0, 24, 24] paint_origin=[10, -4]
+cover rect(1, 1, 126, 126) batch=0 at=0

@@ -1,0 +1,17 @@
+[package]
+name = "iceblink-wgsl"
+version.workspace = true
+edition.workspace = true
+# `src/wgsl/text.wgsl` is derived from the Windows Terminal project under the MIT License.
+license = "Apache-2.0 AND MIT"
+description = "WGSL modules and application shader assembly for the reference renderers"
+
+[dependencies]
+iceblink.workspace = true
+
+# The tests parse and validate assembled shaders and the shader prelude.
+[dev-dependencies]
+naga = { workspace = true, features = ["wgsl-in"] }
+
+[lints]
+workspace = true

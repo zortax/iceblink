@@ -1,0 +1,47 @@
+iceblink
+Copyright 2026 Leonard Seibold
+
+This product includes software developed as part of the GPUI project
+(https://github.com/zed-industries/zed and its community edition fork),
+licensed under the Apache License, Version 2.0. Portions of the wgpu renderer,
+the CPU renderer, the atlas allocator and the WGSL shaders are derived from that
+work and have been modified.
+
+This product also includes software developed as part of the Windows Terminal
+project (https://github.com/microsoft/terminal), Copyright (c) Microsoft
+Corporation, licensed under the MIT License. The gamma-correction ratio table,
+the contrast enhancement and the alpha correction used when rendering text are
+derived from that work and have been modified.
+
+## Derived files
+
+Every file below carries a `DERIVED-FROM:` header naming its origin and licence.
+
+| File | Origin | Licence |
+|---|---|---|
+| `crates/iceblink/src/geom/snap/mod.rs` | GPUI, `crates/gpui/src/window.rs` and `crates/gpui/src/util.rs` | Apache-2.0 |
+| `crates/iceblink/src/geom/snap/bounds.rs` | GPUI, `crates/gpui/src/window.rs` | Apache-2.0 |
+| `crates/iceblink/src/geom/snap/stroke.rs` | GPUI, `crates/gpui/src/window.rs` and `crates/gpui/src/util.rs` | Apache-2.0 |
+| `crates/iceblink/src/color/gamma.rs` | Windows Terminal, `src/renderer/atlas/dwrite.cpp` | MIT |
+| `crates/core/src/plan/order/tree/attach.rs` | GPUI, `crates/gpui/src/bounds_tree.rs` | Apache-2.0 |
+| `crates/core/src/plan/order/tree/mod.rs` | GPUI, `crates/gpui/src/bounds_tree.rs` | Apache-2.0 |
+| `crates/core/src/plan/order/tree/node.rs` | GPUI, `crates/gpui/src/bounds_tree.rs` | Apache-2.0 |
+| `crates/core/src/plan/order/tree/query.rs` | GPUI, `crates/gpui/src/bounds_tree.rs` | Apache-2.0 |
+| `crates/cpu/src/draw/quad/mod.rs` | GPUI, `crates/gpui_wgpu/src/shaders.wgsl` | Apache-2.0 |
+| `crates/cpu/src/draw/shadow.rs` | GPUI, `crates/gpui_wgpu/src/shaders.wgsl` | Apache-2.0 |
+| `crates/cpu/src/draw/sprite/mod.rs` | GPUI, `crates/gpui_wgpu/src/shaders.wgsl` and `crates/gpui_wgpu/src/shaders_subpixel.wgsl` | Apache-2.0 |
+| `crates/cpu/src/frame/filter/blur.rs` | GPUI, `crates/gpui_wgpu/src/shaders.wgsl` | Apache-2.0 |
+| `crates/cpu/src/math/sdf.rs` | GPUI, `crates/gpui_wgpu/src/shaders.wgsl` | Apache-2.0 |
+| `crates/cpu/src/math/srgb.rs` | GPUI, `crates/gpui_wgpu/src/shaders.wgsl` | Apache-2.0 |
+| `crates/cpu/src/math/text.rs` | Windows Terminal, `src/renderer/atlas/dwrite.hlsl` | MIT |
+| `crates/cpu/src/tables/paint.rs` | GPUI, `crates/gpui_wgpu/src/shaders.wgsl` | Apache-2.0 |
+| `crates/wgsl/src/wgsl/blur.wgsl` | GPUI, `crates/gpui_wgpu/src/shaders.wgsl` | Apache-2.0 |
+| `crates/wgsl/src/wgsl/paint.wgsl` | GPUI, `crates/gpui_wgpu/src/shaders.wgsl` | Apache-2.0 |
+| `crates/wgsl/src/wgsl/quad.wgsl` | GPUI, `crates/gpui_wgpu/src/shaders.wgsl` | Apache-2.0 |
+| `crates/wgsl/src/wgsl/sdf.wgsl` | GPUI, `crates/gpui_wgpu/src/shaders.wgsl` | Apache-2.0 |
+| `crates/wgsl/src/wgsl/shadow.wgsl` | GPUI, `crates/gpui_wgpu/src/shaders.wgsl` | Apache-2.0 |
+| `crates/wgsl/src/wgsl/sprite_color.wgsl` | GPUI, `crates/gpui_wgpu/src/shaders.wgsl` | Apache-2.0 |
+| `crates/wgsl/src/wgsl/sprite_mono.wgsl` | GPUI, `crates/gpui_wgpu/src/shaders.wgsl` | Apache-2.0 |
+| `crates/wgsl/src/wgsl/sprite.wgsl` | GPUI, `crates/gpui_wgpu/src/shaders.wgsl` | Apache-2.0 |
+| `crates/wgsl/src/wgsl/subpixel.wgsl` | GPUI, `crates/gpui_wgpu/src/shaders_subpixel.wgsl` | Apache-2.0 |
+| `crates/wgsl/src/wgsl/text.wgsl` | Windows Terminal, `src/renderer/atlas/dwrite.hlsl` | MIT |

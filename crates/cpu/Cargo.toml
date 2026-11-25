@@ -1,0 +1,33 @@
+[package]
+name = "iceblink-cpu"
+version.workspace = true
+edition.workspace = true
+# `src/math/text.rs` is derived from the Windows Terminal project under the MIT License.
+license = "Apache-2.0 AND MIT"
+description = "The reference CPU renderer of the shared compositor contract and its pixmap presenter"
+rust-version.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+bytemuck.workspace = true
+iceblink.workspace = true
+kurbo.workspace = true
+smallvec.workspace = true
+vello_cpu = { workspace = true, features = ["f32_pipeline"] }
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+criterion.workspace = true
+iceblink-core.workspace = true
+iceblink-testing.workspace = true
+iceblink-text.workspace = true
+iceblink-vello.workspace = true
+iceblink-wgpu.workspace = true
+skrifa.workspace = true
+
+[[bench]]
+name = "frames"
+harness = false

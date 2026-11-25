@@ -1,0 +1,399 @@
+//! Damage set absorption, merging, clipping and coalescing.
+
+mod common;
+
+use std::collections::HashSet;
+
+use iceblink::damage::{COALESCE_WASTE_SHARE, DamageSet, full_damage_forced};
+use iceblink::geom::{Device, Rect};
+use proptest::prelude::*;
+
+use crate::common::damage::{Xorshift, assert_disjoint, covered, pixels, rect};
+
+/// Rectangles small enough for a pixel-set oracle to stay cheap.
+fn any_rect() -> impl Strategy<Value = Rect<i32, Device>> {
+    (0i32..48, 0i32..48, 0i32..12, 0i32..12)
+        .prop_map(|(x, y, width, height)| rect(x, y, width, height))
+}
+
+proptest! {
+    /// The set never covers less than what it was given, and never holds two rectangles that
+    /// overlap.
+    #[test]
+    fn the_set_stays_disjoint_and_covers_everything_absorbed(
+        inputs in prop::collection::vec(any_rect(), 0..40),
+    ) {
+        let mut set = DamageSet::<4>::new();
+        let mut expected: HashSet<(i32, i32)> = HashSet::new();
+        for input in inputs {
+            set.absorb(input);
+            expected.extend(pixels(input));
+            assert_disjoint(&set);
+        }
+        prop_assert!(expected.is_subset(&covered(&set)));
+        prop_assert!(set.area().expect("not full") >= expected.len() as i64);
+    }
+
+    /// After absorbing a rectangle whole, one single rectangle of the set contains all of it.
+    #[test]
+    fn absorbing_whole_leaves_one_rectangle_containing_the_whole_input(
+        inputs in prop::collection::vec(any_rect(), 1..24),
+    ) {
+        let mut set = DamageSet::<4>::new();
+        for (index, input) in inputs.into_iter().enumerate() {
+            // Mixed with ordinary absorbs, which may have left pieces for this one to meet.
+            if index % 2 == 0 {
+                set.absorb(input);
+                continue;
+            }
+            set.absorb_whole(input);
+            if input.is_empty() {
+                continue;
+            }
+            prop_assert!(
+                set.rects().iter().any(|held| held.contains_rect(input)),
+                "no single rectangle of {:?} contains {input:?}",
+                set
+            );
+        }
+    }
+
+    /// Everything absorbed is reported as intersecting afterwards.
+    #[test]
+    fn what_was_absorbed_intersects(inputs in prop::collection::vec(any_rect(), 1..24)) {
+        let mut set = DamageSet::<4>::new();
+        for input in &inputs {
+            set.absorb(*input);
+        }
+        for input in &inputs {
+            prop_assert_eq!(set.intersects(*input), !input.is_empty());
+        }
+    }
+
+    /// Absorbing at capacities either side of the default keeps the same promises.
+    #[test]
+    fn the_invariant_holds_at_other_capacities(inputs in prop::collection::vec(any_rect(), 0..24)) {
+        let mut one = DamageSet::<1>::new();
+        let mut eight = DamageSet::<8>::new();
+        for input in inputs {
+            one.absorb(input);
+            eight.absorb(input);
+            assert_disjoint(&one);
+            assert_disjoint(&eight);
+        }
+        prop_assert!(one.len() <= 1);
+    }
+}
+
+#[test]
+fn ten_thousand_random_merges_keep_the_set_disjoint() {
+    let mut generator = Xorshift(0x5eed_1234_9abc_def0);
+    let mut set = DamageSet::<4>::new();
+    let mut expected: HashSet<(i32, i32)> = HashSet::new();
+
+    for _ in 0..10_000 {
+        let candidate = rect(
+            generator.below(400),
+            generator.below(400),
+            generator.below(24),
+            generator.below(24),
+        );
+        set.absorb(candidate);
+        expected.extend(pixels(candidate));
+        assert_disjoint(&set);
+    }
+
+    let final_cover = covered(&set);
+    assert!(
+        expected.is_subset(&final_cover),
+        "a pixel that was damaged is no longer in the set"
+    );
+    assert!(set.area().expect("not full") >= expected.len() as i64);
+}
+
+#[test]
+fn a_capacity_merge_is_transitively_closed() {
+    // Four spread-out rectangles fill the set, then a fifth forces a merge whose union swallows a
+    // rectangle that touched neither of the merged pair.
+    let mut set = DamageSet::<4>::new();
+    set.absorb(rect(0, 0, 10, 10));
+    set.absorb(rect(100, 0, 10, 10));
+    set.absorb(rect(50, 0, 10, 10));
+    set.absorb(rect(0, 200, 10, 10));
+    assert_eq!(set.len(), 4);
+
+    set.absorb(rect(0, 400, 10, 10));
+    assert_disjoint(&set);
+    assert!(set.len() <= 4);
+}
+
+#[test]
+fn an_empty_rectangle_damages_nothing() {
+    let mut set = DamageSet::<4>::new();
+    set.absorb(rect(4, 4, 0, 8));
+    assert!(set.is_empty());
+    assert_eq!(set.area(), Some(0));
+    assert!(!set.intersects(rect(0, 0, 100, 100)));
+}
+
+#[test]
+fn a_full_set_swallows_everything_and_reports_no_rectangles() {
+    let mut set = DamageSet::<4>::full();
+    assert!(set.is_full());
+    assert!(!set.is_empty());
+    assert_eq!(set.rects(), &[]);
+    assert_eq!(set.area(), None);
+    assert_eq!(set.bounds(), None);
+
+    set.absorb(rect(0, 0, 10, 10));
+    assert_eq!(set.rects(), &[]);
+    assert!(set.intersects(rect(900, 900, 1, 1)));
+    assert!(!set.intersects(rect(0, 0, 0, 0)));
+}
+
+#[test]
+fn going_full_discards_the_rectangles_it_supersedes() {
+    let mut set = DamageSet::<4>::new();
+    set.absorb(rect(0, 0, 10, 10));
+    set.set_full();
+    assert_eq!(set.rects(), &[]);
+    set.clear();
+    assert!(set.is_empty());
+    assert!(!set.is_full());
+}
+
+#[test]
+fn absorbing_a_set_takes_its_rectangles_and_its_fullness() {
+    let mut left = DamageSet::<4>::new();
+    left.absorb(rect(0, 0, 10, 10));
+    let mut right = DamageSet::<4>::new();
+    right.absorb(rect(100, 100, 10, 10));
+
+    left.absorb_set(&right);
+    assert_eq!(left.len(), 2);
+
+    left.absorb_set(&DamageSet::<4>::full());
+    assert!(left.is_full());
+}
+
+#[test]
+fn bridging_two_rectangles_collapses_all_three() {
+    let mut set = DamageSet::<4>::new();
+    set.absorb(rect(0, 0, 10, 10));
+    set.absorb(rect(20, 0, 10, 10));
+    assert_eq!(set.len(), 2);
+    set.absorb(rect(5, 0, 20, 10));
+    assert_eq!(set.rects(), &[rect(0, 0, 30, 10)]);
+}
+
+#[test]
+fn the_capacity_merge_picks_the_pair_that_wastes_least() {
+    let mut set = DamageSet::<4>::new();
+    set.absorb(rect(0, 0, 10, 10));
+    set.absorb(rect(11, 0, 10, 10));
+    set.absorb(rect(0, 500, 10, 10));
+    set.absorb(rect(500, 0, 10, 10));
+    set.absorb(rect(500, 500, 10, 10));
+
+    assert_disjoint(&set);
+    // The two neighbours at the origin are the cheapest pair to fuse, so they are the pair that
+    // fused, and the three distant rectangles are untouched.
+    assert!(set.rects().contains(&rect(0, 0, 21, 10)));
+    assert!(set.rects().contains(&rect(0, 500, 10, 10)));
+    assert!(set.rects().contains(&rect(500, 0, 10, 10)));
+    assert!(set.rects().contains(&rect(500, 500, 10, 10)));
+}
+
+#[test]
+fn bounds_cover_every_rectangle() {
+    let mut set = DamageSet::<4>::new();
+    set.absorb(rect(100, 100, 10, 10));
+    set.absorb(rect(0, 0, 10, 10));
+    assert_eq!(set.bounds(), Some(rect(0, 0, 110, 110)));
+}
+
+#[test]
+fn a_frame_starts_from_the_environment_override() {
+    // A frame starts full exactly when the environment forces full damage.
+    assert_eq!(DamageSet::<4>::for_frame().is_full(), full_damage_forced());
+}
+
+#[test]
+fn clipping_cuts_what_hangs_off_the_surface_and_drops_what_is_wholly_outside() {
+    let surface = rect(0, 0, 100, 100);
+    let mut set = DamageSet::<4>::new();
+    set.absorb(rect(-40, -40, 80, 80));
+    set.absorb(rect(200, 200, 50, 50));
+    set.clip_to(surface);
+    assert_eq!(set.rects(), &[rect(0, 0, 40, 40)]);
+    assert_disjoint(&set);
+}
+
+#[test]
+fn clipping_leaves_a_full_set_alone() {
+    // A full set already covers the whole surface.
+    let mut set = DamageSet::<4>::full();
+    set.clip_to(rect(0, 0, 100, 100));
+    assert!(set.is_full());
+    assert!(set.rects().is_empty());
+}
+
+#[test]
+fn absorbing_a_rectangle_already_covered_leaves_the_set_exactly_as_it_was() {
+    // The set compares by the order of its rectangles, so this checks for the identical value.
+    let mut set = DamageSet::<4>::new();
+    set.absorb(rect(0, 0, 100, 100));
+    set.absorb(rect(500, 500, 10, 10));
+    let before = set;
+    set.absorb(rect(20, 20, 30, 30));
+    set.absorb(rect(0, 0, 100, 100));
+    set.absorb(rect(505, 505, 1, 1));
+    assert_eq!(set, before);
+}
+
+#[test]
+fn a_rectangle_spanning_two_held_ones_is_still_merged_in() {
+    // Covered by the set's *area* and by neither of its rectangles. Answering "already contained"
+    // over the union would leave two rectangles that both meet it, and the set promises none do.
+    let mut set = DamageSet::<4>::new();
+    set.absorb(rect(0, 0, 10, 10));
+    set.absorb(rect(20, 0, 10, 10));
+    assert!(!set.contains(rect(0, 0, 30, 10)));
+    set.absorb(rect(0, 0, 30, 10));
+    assert_eq!(set.rects(), &[rect(0, 0, 30, 10)]);
+    assert_disjoint(&set);
+}
+
+#[test]
+fn a_full_set_contains_everything_and_an_empty_one_contains_nothing_it_has_not_been_given() {
+    assert!(DamageSet::<4>::full().contains(rect(0, 0, 1, 1)));
+    assert!(!DamageSet::<4>::new().contains(rect(0, 0, 1, 1)));
+}
+
+#[test]
+fn a_bounded_set_cuts_what_it_absorbs_to_the_bound() {
+    let mut set: DamageSet<4> = DamageSet::new();
+    set.set_bound(Some(rect(0, 0, 100, 100)));
+    set.absorb(rect(50, 50, 100, 100));
+    assert_eq!(set.rects(), &[rect(50, 50, 50, 50)]);
+}
+
+#[test]
+fn a_bounded_set_ignores_what_lies_outside_the_bound() {
+    // Rows far below the bound are dropped one by one.
+    let mut set: DamageSet<4> = DamageSet::new();
+    set.set_bound(Some(rect(0, 0, 100, 100)));
+    for row in 0..1000 {
+        set.absorb(rect(0, 200 + row * 20, 100, 20));
+    }
+    set.absorb_whole(rect(0, 5000, 100, 20));
+    assert!(set.is_empty());
+}
+
+proptest! {
+    /// Coalescing keeps the set disjoint, covers everything it covered, and adds at most the
+    /// allowed share of pixels.
+    #[test]
+    fn coalescing_stays_disjoint_covers_everything_and_keeps_to_the_share(
+        inputs in prop::collection::vec(any_rect(), 0..24),
+    ) {
+        let mut set = DamageSet::<4>::new();
+        for input in inputs {
+            set.absorb(input);
+        }
+        let before = covered(&set);
+        let area = set.area().expect("not full");
+        set.coalesce_dense();
+        assert_disjoint(&set);
+        prop_assert!(before.is_subset(&covered(&set)));
+        let allowed = area as f64 * (1.0 + COALESCE_WASTE_SHARE);
+        prop_assert!(set.area().expect("not full") as f64 <= allowed);
+    }
+}
+
+#[test]
+fn coalescing_merges_dense_panels_into_their_bounds() {
+    let mut set = DamageSet::<6>::new();
+    for top in [0, 110, 220] {
+        set.absorb(rect(0, top, 900, 100));
+    }
+    let bounds = set.bounds();
+    assert!(set.coalesce_dense());
+    assert_eq!(set.rects(), &[rect(0, 0, 900, 320)]);
+    assert_eq!(set.bounds(), bounds);
+}
+
+#[test]
+fn coalescing_merges_two_adjacent_rectangles() {
+    // One pass less pays for the gap between them, even with only two.
+    let mut set = DamageSet::<6>::new();
+    set.absorb(rect(0, 0, 10, 10));
+    set.absorb(rect(11, 0, 10, 10));
+    assert!(set.coalesce_dense());
+    assert_eq!(set.rects(), &[rect(0, 0, 21, 10)]);
+}
+
+#[test]
+fn coalescing_keeps_sparse_cursors_apart() {
+    let mut set = DamageSet::<6>::new();
+    for left in [0, 400, 800] {
+        set.absorb(rect(left, 0, 1, 10));
+    }
+    let before = set;
+    assert!(!set.coalesce_dense());
+    assert_eq!(set, before);
+}
+
+#[test]
+fn coalescing_merges_a_dense_group_and_keeps_a_far_rectangle_apart() {
+    // Three animated panels, and a caret blinking far from them.
+    let mut set = DamageSet::<6>::new();
+    for left in [0, 105, 210] {
+        set.absorb(rect(left, 0, 100, 80));
+    }
+    set.absorb(rect(600, 500, 2, 16));
+    assert!(set.coalesce_dense());
+    assert_eq!(set.len(), 2);
+    assert!(set.rects().contains(&rect(0, 0, 310, 80)));
+    assert!(set.rects().contains(&rect(600, 500, 2, 16)));
+}
+
+#[test]
+fn coalescing_counts_what_an_earlier_merge_added() {
+    // The two squares merge. Measured against the area of that merge, the strip below would merge
+    // too. The three rectangles cover 440 px and their bounds add 232 px, which is more than the
+    // share, so the strip stays apart.
+    let mut set = DamageSet::<6>::new();
+    set.absorb(rect(0, 0, 10, 10));
+    set.absorb(rect(14, 0, 10, 10));
+    set.absorb(rect(0, 18, 24, 10));
+    assert!(set.coalesce_dense());
+    assert_eq!(set.len(), 2);
+    assert!(set.rects().contains(&rect(0, 0, 24, 10)));
+    assert!(set.rects().contains(&rect(0, 18, 24, 10)));
+}
+
+#[test]
+fn coalescing_leaves_full_empty_and_single_sets_alone() {
+    let mut full = DamageSet::<6>::full();
+    assert!(!full.coalesce_dense());
+    assert!(full.is_full());
+    let mut empty = DamageSet::<6>::new();
+    assert!(!empty.coalesce_dense());
+    assert!(empty.is_empty());
+    let mut single = DamageSet::<6>::new();
+    single.absorb(rect(0, 0, 10, 10));
+    assert!(!single.coalesce_dense());
+    assert_eq!(single.rects(), &[rect(0, 0, 10, 10)]);
+}
+
+#[test]
+fn coalescing_keeps_the_bound() {
+    let mut set = DamageSet::<6>::new();
+    set.set_bound(Some(rect(0, 0, 100, 100)));
+    set.absorb(rect(0, 0, 40, 40));
+    set.absorb(rect(44, 0, 40, 40));
+    assert!(set.coalesce_dense());
+    assert_eq!(set.bound(), Some(rect(0, 0, 100, 100)));
+    assert_eq!(set.rects(), &[rect(0, 0, 84, 40)]);
+}

@@ -1,0 +1,53 @@
+[package]
+name = "iceblink-text"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Glyph rasterisation over swash and skrifa, and text layout over Parley into compositor glyph runs, decoration lines and selection quads"
+
+[features]
+# Text layout over Parley, in the `typeset` module.
+typeset = ["dep:fontique", "dep:parley"]
+
+[dependencies]
+fontique = { workspace = true, optional = true }
+iceblink.workspace = true
+parley = { workspace = true, optional = true }
+rustc-hash.workspace = true
+skrifa.workspace = true
+swash.workspace = true
+
+[dev-dependencies]
+iceblink-core.workspace = true
+iceblink-testing.workspace = true
+
+[[test]]
+name = "decorations"
+required-features = ["typeset"]
+
+[[test]]
+name = "positions"
+required-features = ["typeset"]
+
+[[test]]
+name = "recorder"
+required-features = ["typeset"]
+
+[[test]]
+name = "registry"
+required-features = ["typeset"]
+
+[[test]]
+name = "runs"
+required-features = ["typeset"]
+
+[[test]]
+name = "selection"
+required-features = ["typeset"]
+
+[[test]]
+name = "transcript"
+required-features = ["typeset"]
+
+[lints]
+workspace = true

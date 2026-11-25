@@ -1,0 +1,48 @@
+frame 1
+output 1 size=128x128 scale=1 opaque
+damage draw=full present=full
+work 6
+  note reset_all
+  note inserted 1 quads=1
+  table spaces replace=1
+  table clips replace=0
+  table paints replace=1
+  table params replace=0
+batches 1
+  quads 0..1 ink=rect(0, 0, 128, 128)
+    quad bounds=rect(0, 0, 128, 128) fill=solid premul[1, 1, 1, 1]
+cover rect(1, 1, 126, 126) batch=0 at=0
+
+frame 2
+output 1 size=128x128 scale=1 opaque
+damage draw=[rect(8, 8, 110, 110)] present=[rect(8, 8, 110, 110)]
+work 5
+  page create 3 rgba8_premultiplied 1024x1024
+  page upload 3 rect(768, 0, 16, 16) bytes=1024
+  note inserted 2 quads=1 color=3
+  table clips changed=[0]
+  table paints changed=[1]
+batches 2
+  quads 0..2 ink=rect(0, 0, 128, 128)
+    quad bounds=rect(0, 0, 128, 128) fill=solid premul[1, 1, 1, 1]
+    quad bounds=rect(70, 70, 48, 48) fill=solid premul[0, 0.5, 0, 1] clip=[mask rect(70, 70, 48, 48) tile=page3[768, 0, 16, 16] mode=alpha]
+  color page3 0..3 ink=rect(8, 8, 104, 80)
+    color bounds=rect(8, 8, 32, 32) tile=page3[768, 0, 16, 16] nearest
+    color bounds=rect(48, 8, 16, 16) tile=page3[768, 0, 16, 16] frame=rect(48, 8, 64, 32) repeat_x repeat_y nearest
+    color bounds=rect(8, 56, 32, 32) tile=page3[768, 0, 16, 16] paint=solid premul[0, 0.5, 0, 1] mask nearest
+cover rect(1, 1, 126, 126) batch=0 at=0
+
+frame 3
+output 1 size=128x128 scale=1 opaque
+damage draw=[rect(8, 8, 110, 110)] present=[rect(8, 8, 110, 110)]
+work 1
+  page upload 3 rect(768, 0, 16, 16) bytes=1024
+batches 2
+  quads 0..2 ink=rect(0, 0, 128, 128)
+    quad bounds=rect(0, 0, 128, 128) fill=solid premul[1, 1, 1, 1]
+    quad bounds=rect(70, 70, 48, 48) fill=solid premul[0, 0.5, 0, 1] clip=[mask rect(70, 70, 48, 48) tile=page3[768, 0, 16, 16] mode=alpha]
+  color page3 0..3 ink=rect(8, 8, 104, 80)
+    color bounds=rect(8, 8, 32, 32) tile=page3[768, 0, 16, 16] nearest
+    color bounds=rect(48, 8, 16, 16) tile=page3[768, 0, 16, 16] frame=rect(48, 8, 64, 32) repeat_x repeat_y nearest
+    color bounds=rect(8, 56, 32, 32) tile=page3[768, 0, 16, 16] paint=solid premul[0, 0.5, 0, 1] mask nearest
+cover rect(1, 1, 126, 126) batch=0 at=0

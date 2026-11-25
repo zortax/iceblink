@@ -1,0 +1,43 @@
+frame 1
+output 1 size=128x128 scale=1 opaque
+damage draw=full present=full
+work 6
+  note reset_all
+  note inserted 1 quads=1
+  table spaces replace=1
+  table clips replace=0
+  table paints replace=1
+  table params replace=0
+batches 1
+  quads 0..1 ink=rect(0, 0, 128, 128)
+    quad bounds=rect(0, 0, 128, 128) fill=solid premul[1, 1, 1, 1]
+cover rect(1, 1, 126, 126) batch=0 at=0
+
+frame 2
+output 1 size=128x128 scale=1 opaque
+damage draw=[rect(0, 0, 128, 128)] present=[rect(0, 0, 128, 128)]
+work 4
+  page create 0 a8 1024x1024
+  page upload 0 rect(768, 0, 44, 40) bytes=1760
+  note inserted 2 marks=2
+  table paints changed=[1]
+batches 2
+  quads 0..1 ink=rect(0, 0, 128, 128)
+    quad bounds=rect(0, 0, 128, 128) fill=solid premul[1, 1, 1, 1]
+  marks 0..2 ink=rect(0, 0, 128, 128)
+    marks bounds=rect(0, 0, 128, 128) paint=solid premul[0.4, 0.1, 0.5, 1] discs=2 boxes=1 vertices=5 placements=2 half_width=1.5 caps=butt/butt page=0
+    marks bounds=rect(0, 0, 128, 128) paint=solid premul[0.4, 0.1, 0.5, 1] discs=2 boxes=1 vertices=5 placements=0 union half_width=1.5 caps=butt/butt origin=[0, 20] bin=page0 at=[0, 0] region=rect(0, 0, 128, 128)
+cover rect(1, 1, 126, 126) batch=0 at=0
+mark_pages 1 extent=128x128
+
+frame 3
+output 1 size=128x128 scale=1 opaque
+damage draw=[rect(0, 0, 128, 128)] present=[rect(0, 0, 128, 128)]
+batches 2
+  quads 0..1 ink=rect(0, 0, 128, 128)
+    quad bounds=rect(0, 0, 128, 128) fill=solid premul[1, 1, 1, 1]
+  marks 0..2 ink=rect(3, 2, 125, 126)
+    marks bounds=rect(3, 2, 128, 128) paint=solid premul[0.4, 0.1, 0.5, 1] discs=2 boxes=1 vertices=5 placements=2 half_width=1.5 caps=butt/butt origin=[3, 2] paint_origin=[3, 2] page=0
+    marks bounds=rect(3, 2, 128, 128) paint=solid premul[0.4, 0.1, 0.5, 1] discs=2 boxes=1 vertices=5 placements=0 union half_width=1.5 caps=butt/butt origin=[3, 22] paint_origin=[3, 2] bin=page0 at=[0, 0] region=rect(3, 2, 125, 126)
+cover rect(1, 1, 126, 126) batch=0 at=0
+mark_pages 1 extent=125x126

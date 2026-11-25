@@ -1,0 +1,3 @@
+# Tests, benches and runs in this workspace keep compiled pipelines out of the user's cache.
+[env]
+ICEBLINK_CACHE_DIR = { value = "target/pipeline-cache", relative = true, force = false }

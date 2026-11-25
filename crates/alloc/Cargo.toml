@@ -1,0 +1,23 @@
+[package]
+name = "iceblink-alloc"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Arenas with stable addresses and generation-checked keys, and texture atlas allocation, eviction and deferred uploads"
+
+[dependencies]
+etagere.workspace = true
+iceblink.workspace = true
+rustc-hash.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+criterion.workspace = true
+proptest.workspace = true
+
+[[bench]]
+name = "paged_vec"
+harness = false
+
+[lints]
+workspace = true

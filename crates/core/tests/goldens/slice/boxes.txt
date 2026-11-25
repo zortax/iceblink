@@ -1,0 +1,70 @@
+frame 1
+output 1 size=128x128 scale=1 opaque
+damage draw=full present=full
+work 6
+  note reset_all
+  note inserted 1 quads=1
+  table spaces replace=1
+  table clips replace=0
+  table paints replace=1
+  table params replace=0
+batches 1
+  quads 0..1 ink=rect(0, 0, 128, 128)
+    quad bounds=rect(0, 0, 128, 128) fill=solid premul[1, 1, 1, 1]
+cover rect(1, 1, 126, 126) batch=0 at=0
+
+frame 2
+output 1 size=128x128 scale=1 opaque
+damage draw=[rect(0, 0, 120, 80)] present=[rect(0, 0, 120, 80)]
+work 2
+  note inserted 2 quads=2 shadows=1 lines=3
+  table paints changed=[1, 2, 3]
+batches 5
+  quads 0..1 ink=rect(0, 0, 128, 128)
+    quad bounds=rect(0, 0, 128, 128) fill=solid premul[1, 1, 1, 1]
+  shadows 0..1 ink=rect(0, 0, 72, 52)
+    shadow bounds=rect(-2, -2, 74, 54) shape=rect(10, 10, 50, 30) blur=4 color=premul[0, 0, 0, 0.4] caster=rect(10, 10, 50, 30) radii=[6, 6, 6, 6, 6, 6, 6, 6] caster_radii=[6, 6, 6, 6, 6, 6, 6, 6]
+  quads 1..2 ink=rect(10, 60, 60, 20)
+    quad bounds=rect(10, 60, 60, 20) fill=linear from=(0, 0) to=(60, 0) in oklab stops=[[0.628, 0.2249, 0.1258, 1]@0, [0.452, -0.0325, -0.3115, 1]@1] paint_origin=[10, 60]
+  lines 0..3 ink=rect(80, 20, 40, 28)
+    line bounds=rect(80, 20, 40, 4) color=premul[0.8, 0.102, 0.102, 1] thickness=1 style=solid
+    line bounds=rect(80, 32, 40, 4) color=premul[0.8, 0.102, 0.102, 1] thickness=1 style=dashed
+    line bounds=rect(80, 44, 40, 4) color=premul[0.8, 0.102, 0.102, 1] thickness=1 style=wavy
+  quads 2..3 ink=rect(10, 10, 50, 30)
+    quad bounds=rect(10, 10, 50, 30) fill=solid premul[0.1, 0.3, 0.8, 1] border=[2, 2, 2, 2] stroke=solid premul[0, 0, 0, 1] style=solid radii=[6, 6, 6, 6, 6, 6, 6, 6]
+cover rect(1, 1, 126, 126) batch=0 at=0
+cover rect(17, 17, 36, 16) batch=4 at=2
+
+frame 3
+output 1 size=128x128 scale=1 opaque
+damage draw=[rect(10, 10, 50, 30)] present=[rect(10, 10, 50, 30)]
+work 1
+  table paints changed=[1]
+batches 3
+  quads 0..1 ink=rect(0, 0, 128, 128)
+    quad bounds=rect(0, 0, 128, 128) fill=solid premul[1, 1, 1, 1]
+  shadows 0..1 ink=rect(0, 0, 72, 52)
+    shadow bounds=rect(-2, -2, 74, 54) shape=rect(10, 10, 50, 30) blur=4 color=premul[0, 0, 0, 0.4] caster=rect(10, 10, 50, 30) radii=[6, 6, 6, 6, 6, 6, 6, 6] caster_radii=[6, 6, 6, 6, 6, 6, 6, 6]
+  quads 1..2 ink=rect(10, 10, 50, 30)
+    quad bounds=rect(10, 10, 50, 30) fill=solid premul[0.1, 0.6, 0.2, 1] border=[2, 2, 2, 2] stroke=solid premul[0, 0, 0, 1] style=solid radii=[6, 6, 6, 6, 6, 6, 6, 6]
+cover rect(1, 1, 126, 126) batch=0 at=0
+cover rect(17, 17, 36, 16) batch=2 at=1
+
+frame 4
+output 1 size=128x128 scale=1 opaque
+damage draw=[rect(80, 44, 40, 4), rect(0, 0, 78, 56), rect(10, 60, 66, 24), rect(80, 20, 46, 8), rect(86, 48, 40, 4), rect(80, 32, 46, 8)] present=[rect(80, 44, 40, 4), rect(0, 0, 78, 56), rect(10, 60, 66, 24), rect(80, 20, 46, 8), rect(86, 48, 40, 4), rect(80, 32, 46, 8)]
+batches 5
+  quads 0..1 ink=rect(0, 0, 128, 128)
+    quad bounds=rect(0, 0, 128, 128) fill=solid premul[1, 1, 1, 1]
+  shadows 0..1 ink=rect(4, 2, 74, 54)
+    shadow bounds=rect(4, 2, 74, 54) shape=rect(16, 14, 50, 30) blur=4 color=premul[0, 0, 0, 0.4] caster=rect(16, 14, 50, 30) radii=[6, 6, 6, 6, 6, 6, 6, 6] caster_radii=[6, 6, 6, 6, 6, 6, 6, 6]
+  quads 1..2 ink=rect(16, 64, 60, 20)
+    quad bounds=rect(16, 64, 60, 20) fill=linear from=(0, 0) to=(60, 0) in oklab stops=[[0.628, 0.2249, 0.1258, 1]@0, [0.452, -0.0325, -0.3115, 1]@1] paint_origin=[16, 64]
+  lines 0..3 ink=rect(86, 24, 40, 28)
+    line bounds=rect(86, 24, 40, 4) color=premul[0.8, 0.102, 0.102, 1] thickness=1 style=solid
+    line bounds=rect(86, 36, 40, 4) color=premul[0.8, 0.102, 0.102, 1] thickness=1 style=dashed
+    line bounds=rect(86, 48, 40, 4) color=premul[0.8, 0.102, 0.102, 1] thickness=1 style=wavy
+  quads 2..3 ink=rect(16, 14, 50, 30)
+    quad bounds=rect(16, 14, 50, 30) fill=solid premul[0.1, 0.6, 0.2, 1] border=[2, 2, 2, 2] stroke=solid premul[0, 0, 0, 1] style=solid radii=[6, 6, 6, 6, 6, 6, 6, 6] paint_origin=[6, 4]
+cover rect(1, 1, 126, 126) batch=0 at=0
+cover rect(23, 21, 36, 16) batch=4 at=2

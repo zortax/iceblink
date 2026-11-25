@@ -1,0 +1,52 @@
+[package]
+name = "iceblink-wgpu"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "The reference wgpu renderer and presenters, with the vector rasteriser plug-in trait, a coverage-mask rasteriser, staging uploads and pipeline caching"
+
+[dependencies]
+bincode.workspace = true
+bytemuck.workspace = true
+futures.workspace = true
+iceblink.workspace = true
+iceblink-wgsl.workspace = true
+kurbo.workspace = true
+# Named to turn on decoding of prebuilt shader IR. The type itself is reached through `wgpu::naga`.
+naga = { workspace = true, features = ["deserialize"] }
+raw-window-handle.workspace = true
+rustc-hash.workspace = true
+smallvec.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+web-time.workspace = true
+# `naga-ir` builds a pipeline from prebuilt IR instead of WGSL text.
+wgpu = { workspace = true, features = ["naga-ir"] }
+
+[dev-dependencies]
+iceblink-testing.workspace = true
+iceblink-text.workspace = true
+iceblink-vello.workspace = true
+# The tests prebuild application shaders the way a client does.
+naga = { workspace = true, features = ["wgsl-in", "serialize"] }
+skrifa.workspace = true
+
+# The renderer's modules are parsed once per build. The text comes from iceblink-wgsl.
+[build-dependencies]
+bincode.workspace = true
+iceblink-wgsl.workspace = true
+naga = { workspace = true, features = ["wgsl-in", "serialize"] }
+
+# The native swap chains. `ash` is the version wgpu-hal links, so its handles are the ones the hal
+# takes. The targets are the ones `build.rs` sets `vulkan_hal` for.
+[target.'cfg(any(windows, target_os = "linux", target_os = "android", target_os = "freebsd"))'.dependencies]
+ash.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+windows.workspace = true
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wgpu = { workspace = true, features = ["webgl", "fragile-send-sync-non-atomic-wasm"] }
+
+[lints]
+workspace = true

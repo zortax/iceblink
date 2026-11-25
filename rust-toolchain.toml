@@ -1,0 +1,8 @@
+# Miri needs nightly and runs through `scripts/miri.sh`. The crates also build on the `rust-version`
+# in the workspace manifest, which `scripts/msrv.sh` checks.
+[toolchain]
+channel = "stable"
+components = ["rustfmt", "clippy"]
+# The wasm target, which the interface crate is checked against.
+targets = ["wasm32-unknown-unknown"]
+profile = "minimal"

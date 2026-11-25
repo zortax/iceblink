@@ -1,0 +1,62 @@
+frame 1
+output 1 size=128x128 scale=1 opaque
+damage draw=full present=full
+work 6
+  note reset_all
+  note inserted 1 quads=1
+  table spaces replace=1
+  table clips replace=0
+  table paints replace=1
+  table params replace=0
+batches 1
+  quads 0..1 ink=rect(0, 0, 128, 128)
+    quad bounds=rect(0, 0, 128, 128) fill=solid premul[1, 1, 1, 1]
+cover rect(1, 1, 126, 126) batch=0 at=0
+
+frame 2
+output 1 size=128x128 scale=1 opaque
+damage draw=[rect(16, 30, 96, 60)] present=[rect(16, 30, 96, 60)]
+work 3
+  note inserted 2 quads=2
+  table clips changed=[0, 1]
+  table paints changed=[1, 2]
+batches 1
+  quads 0..3 ink=rect(0, 0, 128, 128)
+    quad bounds=rect(0, 0, 128, 128) fill=solid premul[1, 1, 1, 1]
+    quad bounds=rect(0, 0, 128, 128) fill=solid premul[0.1, 0.6, 0.6, 1] clip=[rect(16, 16, 96, 96) radii=[10, 10, 10, 10, 10, 10, 10, 10] > rect(8, 30, 112, 60)]
+    quad bounds=rect(30.25, 20.5, 60, 80) fill=solid premul[0.4, 0.1, 0.5, 0.7] radii=[14, 14, 14, 14, 14, 14, 14, 14] clip=[rect(16, 16, 96, 96) radii=[10, 10, 10, 10, 10, 10, 10, 10] > rect(8, 30, 112, 60)]
+cover rect(1, 1, 126, 126) batch=0 at=0
+
+frame 3
+output 1 size=128x128 scale=1 opaque
+damage draw=[rect(16, 86, 96, 4), rect(16, 51, 10, 13), rect(102, 51, 10, 13), rect(102, 76, 10, 10), rect(16, 76, 10, 10)] present=[rect(16, 86, 96, 4), rect(16, 51, 10, 13), rect(102, 51, 10, 13), rect(102, 76, 10, 10), rect(16, 76, 10, 10)]
+work 1
+  table clips changed=[0, 1]
+batches 1
+  quads 0..3 ink=rect(0, 0, 128, 128)
+    quad bounds=rect(0, 0, 128, 128) fill=solid premul[1, 1, 1, 1]
+    quad bounds=rect(0, 0, 128, 128) fill=solid premul[0.1, 0.6, 0.6, 1] clip=[rect(16, 16, 96, 70.5) radii=[10, 10, 10, 10, 10, 10, 10, 10] > rect(8, 30, 112, 60)]
+    quad bounds=rect(30.25, 20.5, 60, 80) fill=solid premul[0.4, 0.1, 0.5, 0.7] radii=[14, 14, 14, 14, 14, 14, 14, 14] clip=[rect(16, 16, 96, 70.5) radii=[10, 10, 10, 10, 10, 10, 10, 10] > rect(8, 30, 112, 60)]
+cover rect(1, 1, 126, 126) batch=0 at=0
+
+frame 4
+output 1 size=128x128 scale=1 opaque
+damage draw=[rect(16, 30, 30, 16)] present=[rect(16, 30, 30, 16)]
+work 1
+  table clips changed=[0, 1]
+batches 1
+  quads 0..3 ink=rect(0, 0, 128, 128)
+    quad bounds=rect(0, 0, 128, 128) fill=solid premul[1, 1, 1, 1]
+    quad bounds=rect(0, 0, 128, 128) fill=solid premul[0.1, 0.6, 0.6, 1] clip=[rect(16, 16, 96, 70.5) radii=[30, 30, 10, 10, 10, 10, 10, 10] > rect(8, 30, 112, 60)]
+    quad bounds=rect(30.25, 20.5, 60, 80) fill=solid premul[0.4, 0.1, 0.5, 0.7] radii=[14, 14, 14, 14, 14, 14, 14, 14] clip=[rect(16, 16, 96, 70.5) radii=[30, 30, 10, 10, 10, 10, 10, 10] > rect(8, 30, 112, 60)]
+cover rect(1, 1, 126, 126) batch=0 at=0
+
+frame 5
+output 1 size=128x128 scale=1 opaque
+damage draw=[rect(16, 30, 8, 57), rect(104, 30, 8, 57)] present=[rect(16, 30, 8, 57), rect(104, 30, 8, 57)]
+work 1
+  table clips changed=[1]
+batches 1
+  quads 0..1 ink=rect(0, 0, 128, 128)
+    quad bounds=rect(0, 0, 128, 128) fill=solid premul[1, 1, 1, 1]
+cover rect(1, 1, 126, 126) batch=0 at=0

@@ -1,0 +1,60 @@
+frame 1
+output 1 size=128x128 scale=1 opaque
+damage draw=full present=full
+work 6
+  note reset_all
+  note inserted 1 quads=1
+  table spaces replace=1
+  table clips replace=0
+  table paints replace=1
+  table params replace=0
+batches 1
+  quads 0..1 ink=rect(0, 0, 128, 128)
+    quad bounds=rect(0, 0, 128, 128) fill=solid premul[1, 1, 1, 1]
+cover rect(1, 1, 126, 126) batch=0 at=0
+
+frame 2
+output 1 size=128x128 scale=1 opaque
+damage draw=[rect(8, 4, 112, 92)] present=[rect(8, 4, 112, 92)]
+work 4
+  note inserted 2 quads=10
+  table spaces changed=[1]
+  table clips changed=[0]
+  table paints changed=[1]
+batches 1
+  quads 0..4 ink=rect(0, 0, 128, 128)
+    quad bounds=rect(0, 0, 128, 128) fill=solid premul[1, 1, 1, 1]
+    quad bounds=rect(8, 4, 112, 24) fill=solid premul[0.2, 0.2, 0.7, 1] clip=[rect(0, 0, 128, 96)]
+    quad bounds=rect(8, 44, 112, 24) fill=solid premul[0.2, 0.2, 0.7, 1] clip=[rect(0, 0, 128, 96)]
+    quad bounds=rect(8, 84, 112, 24) fill=solid premul[0.2, 0.2, 0.7, 1] clip=[rect(0, 0, 128, 96)]
+cover rect(1, 1, 126, 126) batch=0 at=0
+cover rect(9, 5, 110, 22) batch=0 at=1
+cover rect(9, 45, 110, 22) batch=0 at=2
+cover rect(9, 85, 110, 10) batch=0 at=3
+
+frame 3
+output 1 size=128x128 scale=1 opaque
+damage draw=[rect(0, 66, 128, 30)] present=[rect(0, 66, 128, 30), rect(0, 0, 128, 66)]
+shift region=rect(0, 0, 128, 96) by=[0, -30]
+work 1
+  table spaces changed=[1]
+batches 1
+  quads 0..3 ink=rect(0, 0, 128, 128)
+    quad bounds=rect(0, 0, 128, 128) fill=solid premul[1, 1, 1, 1]
+    quad bounds=rect(8, 84, 112, 24) fill=solid premul[0.2, 0.2, 0.7, 1] clip=[rect(0, 0, 128, 96)] space=translate[0, -30]
+    quad bounds=rect(8, 124, 112, 24) fill=solid premul[0.2, 0.2, 0.7, 1] clip=[rect(0, 0, 128, 96)] space=translate[0, -30]
+cover rect(1, 1, 126, 126) batch=0 at=0
+cover rect(9, 55, 110, 22) batch=0 at=1
+
+frame 4
+output 1 size=128x128 scale=1 opaque
+damage draw=[rect(0, 76, 128, 20)] present=[rect(0, 76, 128, 20), rect(0, 0, 128, 76)]
+shift region=rect(0, 0, 128, 96) by=[0, -20]
+work 1
+  table spaces changed=[1]
+batches 1
+  quads 0..2 ink=rect(0, 0, 128, 128)
+    quad bounds=rect(0, 0, 128, 128) fill=solid premul[1, 1, 1, 1]
+    quad bounds=rect(8, 124, 112, 24) fill=solid premul[0.2, 0.2, 0.7, 1] clip=[rect(0, 0, 128, 96)] space=translate[0, -50]
+cover rect(1, 1, 126, 126) batch=0 at=0
+cover rect(9, 75, 110, 20) batch=0 at=1

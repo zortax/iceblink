@@ -1,0 +1,23 @@
+[package]
+name = "iceblink-vello"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "A vello vector rasteriser for iceblink-wgpu"
+
+[dependencies]
+iceblink.workspace = true
+iceblink-wgpu.workspace = true
+kurbo.workspace = true
+peniko.workspace = true
+rustc-hash.workspace = true
+smallvec.workspace = true
+tracing.workspace = true
+vello.workspace = true
+wgpu.workspace = true
+
+[dev-dependencies]
+iceblink-testing.workspace = true
+
+[lints]
+workspace = true
