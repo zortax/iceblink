@@ -137,35 +137,54 @@ pub fn invalid_items(make: MakeCompositor<'_>) {
         "a path with a NaN point",
     );
 
+    // The marks item draws one placement from `first`, and only that one must name a shape.
+    let marks = |tx: &mut iceblink::Transaction, stage: &Stage, first: u32| {
+        let mut chunk = tx.record(key(3), stage.props());
+        let payload = chunk.payload(Arc::new(MarkPayload {
+            shapes: vec![Arc::new(BezPath::new())],
+            placements: vec![placement(0.0, 0), placement(4.0, 7)],
+            ..MarkPayload::default()
+        }));
+        chunk.marks(Marks {
+            bounds: [0.0, 0.0, 16.0, 16.0],
+            paint: PaintRef::color(RED),
+            paint_origin: [0.0; 2],
+            origin: [0.0; 2],
+            axes: [1.0, 0.0, 0.0, 1.0],
+            half_width: 0.0,
+            discs: 0,
+            boxes: 0,
+            vertices: 0,
+            placements: 1,
+            first,
+            payload,
+            clip: ClipRef::INHERIT,
+            space: SpaceRef::INHERIT,
+            flags: MarkFlags::default(),
+        });
+    };
     let mut tx = stage.tx();
-    let mut chunk = tx.record(key(3), stage.props());
-    let payload = chunk.payload(Arc::new(MarkPayload {
-        shapes: vec![Arc::new(BezPath::new())],
-        placements: vec![placement(0.0, 0), placement(4.0, 7)],
-        ..MarkPayload::default()
-    }));
-    chunk.marks(Marks {
-        bounds: [0.0, 0.0, 16.0, 16.0],
-        paint: PaintRef::color(RED),
-        paint_origin: [0.0; 2],
-        origin: [0.0; 2],
-        axes: [1.0, 0.0, 0.0, 1.0],
-        half_width: 0.0,
-        discs: 0,
-        boxes: 0,
-        vertices: 0,
-        placements: 1,
-        first: 1,
-        payload,
-        clip: ClipRef::INHERIT,
-        space: SpaceRef::INHERIT,
-        flags: MarkFlags::default(),
-    });
+    marks(&mut tx, &stage, 0);
+    stage.commit(tx);
+    let mut tx = stage.tx();
+    marks(&mut tx, &stage, 1);
     rejects(
         &mut stage,
         tx,
         RejectReason::InvalidItem,
         "a placement drawn past its first that names no shape",
+    );
+
+    let mut tx = stage.tx();
+    let mut chunk = tx.record(key(3), stage.props());
+    let mut unplaced = quad([0.0, 0.0, 8.0, 8.0], RED);
+    unplaced.space = SpaceRef(77);
+    chunk.quad(unplaced);
+    rejects(
+        &mut stage,
+        tx,
+        RejectReason::InvalidItem,
+        "a quad naming a space slot the chunk does not hold",
     );
 
     let mut tx = stage.tx();

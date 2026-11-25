@@ -7,8 +7,8 @@ use iceblink::damage::DamageSet;
 use std::sync::Arc;
 
 use iceblink::{
-    Built, ChunkKey, CompositorEvent, GesturePhase, OutputId, RejectReason, ScrollBehaviour,
-    ScrollGesture, ScrollNode, ScrollPhysics, ScrollSource, SnapKind, Sources,
+    Built, ChunkKey, CompositorEvent, GesturePhase, ScrollBehaviour, ScrollGesture, ScrollNode,
+    ScrollPhysics, ScrollSource, SnapKind, Sources,
 };
 
 use common::{Scene, rect};
@@ -188,16 +188,4 @@ fn verification_holds_each_derived_rectangle_against_the_declaration() {
             .any(|event| matches!(event, CompositorEvent::DamageUndeclared { .. })),
         "no change damages a pixel outside the declaration: {events:?}"
     );
-}
-
-#[test]
-fn a_declaration_for_an_unknown_output_is_rejected() {
-    let (mut scene, _) = drawn(false);
-    let mut tx = scene.tx();
-    tx.declare_damage(OutputId(77), DamageSet::full());
-    let error = scene
-        .compositor
-        .commit(tx)
-        .expect_err("the output does not exist");
-    assert_eq!(error.reason, RejectReason::UnknownOutput);
 }

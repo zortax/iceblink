@@ -5,21 +5,20 @@ mod common;
 use std::sync::Arc;
 
 use iceblink::Compositor;
-use iceblink::kurbo::{self, Shape as _};
+use iceblink::kurbo::{self};
 use iceblink::smallvec::smallvec;
 use iceblink::{
     Anchor, AnyId, Built, ChunkKey, ClipNode, ClipShape, Color, EffectNode, Filter, Gradient,
-    GradientShape, GradientStop, IdSpace, ImageDesc, ImageFormat, ImageWrite, Interpolation,
-    MarkPayload, MarkPlacement, Matrix4, OrderEntry, OrderNode, OutputId, Paint, PaintKind,
-    PaintRef, ParamsBlock, PathItem, PathStroke, ROUND, RejectReason, ScrollId, ScrollNode,
-    ShaderDesc, ShaderMode, ShaderReads, ShaderSource, StickyAnchor, Transaction, TransformNode,
+    GradientShape, GradientStop, Interpolation, MarkPayload, Matrix4, OrderEntry, OrderNode, Paint,
+    PaintKind, PathItem, PathStroke, ROUND, RejectReason, ScrollId, ScrollNode, StickyAnchor,
+    Transaction, TransformNode,
 };
 use iceblink::{
     Animation, AnimationStart, AnimationTarget, Direction, Easing, FillMode, Keyframe, Keyframes,
     Timing,
 };
 
-use common::{Scene, identity, props, quad, rect};
+use common::{Scene, identity, props, quad};
 
 fn reject(scene: &mut Scene, tx: Transaction) -> RejectReason {
     scene
@@ -39,29 +38,6 @@ fn clip_node(space: iceblink::TransformId) -> ClipNode {
             shapes: ROUND,
         },
     }
-}
-
-#[test]
-fn a_foreign_id_space_is_stale() {
-    let mut scene = Scene::new();
-    let mut tx = Transaction::new(IdSpace::new(scene.client));
-    tx.create_order(OrderNode::default());
-    assert_eq!(reject(&mut scene, tx), RejectReason::StaleId);
-}
-
-#[test]
-fn a_removed_id_is_stale() {
-    let mut scene = Scene::new();
-    let mut tx = scene.tx();
-    let paint = tx.create_paint(Paint::Solid(Color::TRANSPARENT));
-    scene.commit(tx);
-    let mut tx = scene.tx();
-    tx.remove(paint);
-    scene.commit(tx);
-
-    let mut tx = scene.tx();
-    tx.set_paint(paint, Paint::Solid(Color::TRANSPARENT));
-    assert_eq!(reject(&mut scene, tx), RejectReason::StaleId);
 }
 
 #[test]
@@ -157,19 +133,6 @@ fn removing_a_chunk_and_its_clip_together_is_legal() {
 }
 
 #[test]
-fn a_transform_parent_cycle_is_rejected() {
-    let mut scene = Scene::new();
-    let mut tx = scene.tx();
-    let a = tx.create_transform(identity(None));
-    let b = tx.create_transform(identity(Some(a)));
-    scene.commit(tx);
-
-    let mut tx = scene.tx();
-    tx.set_transform_node(a, identity(Some(b)));
-    assert_eq!(reject(&mut scene, tx), RejectReason::Cycle);
-}
-
-#[test]
 fn an_order_node_in_two_places_conflicts() {
     let mut scene = Scene::new();
     let mut tx = scene.tx();
@@ -250,56 +213,6 @@ fn moving_an_order_node_within_one_transaction_is_legal() {
 }
 
 #[test]
-fn a_splice_past_the_end_is_out_of_range() {
-    let mut scene = Scene::new();
-    let mut tx = scene.tx();
-    tx.splice(scene.root, 1, 0, &[]);
-    assert_eq!(reject(&mut scene, tx), RejectReason::SpliceOutOfRange);
-}
-
-#[test]
-fn changing_a_paint_kind_is_rejected() {
-    let mut scene = Scene::new();
-    let mut tx = scene.tx();
-    let paint = tx.create_paint(Paint::Solid(Color::TRANSPARENT));
-    scene.commit(tx);
-    let mut tx = scene.tx();
-    tx.set_paint(paint, Paint::Sides([Color::TRANSPARENT; 4]));
-    assert_eq!(reject(&mut scene, tx), RejectReason::PaintKindChanged);
-}
-
-#[test]
-fn a_paint_ref_of_another_kind_is_rejected() {
-    let mut scene = Scene::new();
-    let mut tx = scene.tx();
-    let paint = tx.create_paint(Paint::Solid(Color::TRANSPARENT));
-    let mut chunk = tx.record(ChunkKey::new(1, 0), props(scene.space));
-    let fill = chunk.paint_ref(PaintKind::SIDES, paint);
-    chunk.quad(quad([0.0, 0.0, 4.0, 4.0], fill));
-    assert_eq!(reject(&mut scene, tx), RejectReason::PaintKindChanged);
-}
-
-#[test]
-fn a_non_finite_item_is_invalid() {
-    let mut scene = Scene::new();
-    let mut tx = scene.tx();
-    let mut chunk = tx.record(ChunkKey::new(1, 0), props(scene.space));
-    chunk.quad(quad([f32::NAN, 0.0, 4.0, 4.0], iceblink::PaintRef::NONE));
-    assert_eq!(reject(&mut scene, tx), RejectReason::InvalidItem);
-}
-
-#[test]
-fn an_invalid_enumeration_is_invalid() {
-    let mut scene = Scene::new();
-    let mut tx = scene.tx();
-    let mut chunk = tx.record(ChunkKey::new(1, 0), props(scene.space));
-    let mut item = quad([0.0, 0.0, 4.0, 4.0], iceblink::PaintRef::NONE);
-    item.style = iceblink::BorderStyle(7);
-    chunk.quad(item);
-    assert_eq!(reject(&mut scene, tx), RejectReason::InvalidItem);
-}
-
-#[test]
 fn a_dead_slot_in_an_item_is_invalid() {
     let mut scene = Scene::new();
     let mut tx = scene.tx();
@@ -308,88 +221,6 @@ fn a_dead_slot_in_an_item_is_invalid() {
     item.space = iceblink::SpaceRef(77);
     chunk.quad(item);
     assert_eq!(reject(&mut scene, tx), RejectReason::InvalidItem);
-}
-
-#[test]
-fn an_offset_of_a_missing_chunk_is_unknown() {
-    let mut scene = Scene::new();
-    let mut tx = scene.tx();
-    tx.set_offset(ChunkKey::new(5, 5), [1.0, 0.0]);
-    assert_eq!(reject(&mut scene, tx), RejectReason::UnknownChunk);
-}
-
-#[test]
-fn a_root_of_a_missing_output_is_unknown() {
-    let mut scene = Scene::new();
-    let mut tx = scene.tx();
-    tx.set_root(OutputId(99), Some(scene.root));
-    assert_eq!(reject(&mut scene, tx), RejectReason::UnknownOutput);
-}
-
-#[test]
-fn a_write_outside_an_image_is_invalid() {
-    let mut scene = Scene::new();
-    let mut tx = scene.tx();
-    let image = tx.create_image(ImageDesc {
-        width: 4,
-        height: 4,
-        format: ImageFormat::A8,
-    });
-    tx.write_image(
-        image,
-        ImageWrite {
-            rect: rect(2, 2, 4, 4),
-            bytes: Arc::from(vec![0_u8; 64]),
-            offset: 0,
-            stride: 4,
-        },
-    );
-    assert_eq!(reject(&mut scene, tx), RejectReason::InvalidWrite);
-}
-
-fn shader(mode: ShaderMode, params_size: u32) -> ShaderDesc {
-    ShaderDesc {
-        mode,
-        source: ShaderSource {
-            wgsl: Arc::from(""),
-            prebuilt: None,
-        },
-        params_size,
-        reads: ShaderReads::default(),
-    }
-}
-
-#[test]
-fn oversized_shader_parameters_are_invalid() {
-    let mut scene = Scene::new();
-    let mut tx = scene.tx();
-    tx.create_shader(shader(ShaderMode::PAINT, 65));
-    assert_eq!(reject(&mut scene, tx), RejectReason::InvalidShader);
-}
-
-#[test]
-fn a_filter_naming_a_paint_shader_is_invalid() {
-    let mut scene = Scene::new();
-    let mut tx = scene.tx();
-    let paint_shader = tx.create_shader(shader(ShaderMode::PAINT, 0));
-    let params = tx.create_params(ParamsBlock {
-        pointer: [0.0; 2],
-        hovered: 0.0,
-        _reserved: 0.0,
-        user: [0; 64],
-    });
-    tx.create_effect(EffectNode {
-        clip: None,
-        opacity: 1.0,
-        blend: iceblink::BlendMode::NORMAL,
-        filters: Arc::from(vec![Filter::Shader {
-            shader: paint_shader,
-            params,
-            reach: 0.0,
-        }]),
-        isolate: false,
-    });
-    assert_eq!(reject(&mut scene, tx), RejectReason::InvalidShader);
 }
 
 #[test]
@@ -599,39 +430,6 @@ fn marks(counts: [u32; 3], first: u32) -> iceblink::Marks {
     }
 }
 
-fn placement(shape: u32) -> MarkPlacement {
-    MarkPlacement {
-        x: 10.0,
-        y: 10.0,
-        shape,
-        _pad: 0,
-    }
-}
-
-#[test]
-fn a_marks_item_checks_the_shapes_of_the_placements_it_draws() {
-    let payload = Arc::new(MarkPayload {
-        shapes: vec![Arc::new(kurbo::Rect::new(0.0, 0.0, 2.0, 2.0).to_path(0.1))],
-        placements: vec![placement(0), placement(5)],
-        ..MarkPayload::default()
-    });
-    let commit = |first: u32| {
-        let mut scene = Scene::new();
-        let mut tx = scene.tx();
-        let mut chunk = tx.record(ChunkKey::new(1, 0), props(scene.space));
-        chunk.payload(Arc::clone(&payload));
-        chunk.marks(marks([0, 0, 1], first));
-        scene
-            .compositor
-            .commit(tx)
-            .map(|_| ())
-            .map_err(|error| error.reason)
-    };
-
-    assert_eq!(commit(0), Ok(()), "the first placement names a shape");
-    assert_eq!(commit(1), Err(RejectReason::InvalidItem));
-}
-
 #[test]
 fn non_finite_numbers_in_commands_are_invalid() {
     type Write = Box<dyn Fn(&mut Transaction, &Scene)>;
@@ -694,14 +492,6 @@ fn non_finite_numbers_in_commands_are_invalid() {
     };
 
     let cases: Vec<(&str, Write, Option<RejectReason>)> = vec![
-        (
-            "a path point",
-            Box::new(move |tx, scene| {
-                let mut chunk = tx.record(ChunkKey::new(1, 0), props(scene.space));
-                chunk.path(path_item(line([0.0, 0.0, f64::NAN, 4.0]), 1.0));
-            }),
-            Some(RejectReason::InvalidItem),
-        ),
         (
             "a stroke width",
             Box::new(move |tx, scene| {
@@ -796,32 +586,6 @@ fn non_finite_numbers_in_commands_are_invalid() {
             }),
             Some(RejectReason::InvalidItem),
         ),
-        (
-            "a clip rectangle",
-            Box::new(|tx, scene| {
-                let mut node = clip_node(scene.space);
-                node.shape = ClipShape::RoundedRect {
-                    rect: [0.0, 0.0, f32::INFINITY, 4.0],
-                    radii: [0.0; 8],
-                    shapes: ROUND,
-                };
-                tx.create_clip(node);
-            }),
-            Some(RejectReason::InvalidItem),
-        ),
-        (
-            "an effect's blur",
-            Box::new(|tx, _| {
-                tx.create_effect(EffectNode {
-                    clip: None,
-                    opacity: 1.0,
-                    blend: iceblink::BlendMode::NORMAL,
-                    filters: Arc::from(vec![Filter::Blur(f32::NAN)]),
-                    isolate: false,
-                });
-            }),
-            Some(RejectReason::InvalidItem),
-        ),
     ];
 
     for (name, write, expected) in cases {
@@ -845,17 +609,4 @@ fn scroll_node(space: iceblink::TransformId) -> ScrollNode {
         offset: [0.0, 0.0],
         behaviour: None,
     }
-}
-
-#[test]
-fn an_item_no_op_names_is_invalid() {
-    let mut scene = Scene::new();
-    let mut tx = scene.tx();
-    let mut chunk = tx.empty_chunk(ChunkKey::new(1, 0), props(scene.space));
-    chunk
-        .recorder()
-        .quad(quad([0.0, 0.0, 4.0, 4.0], PaintRef::NONE));
-    chunk.quads.push(quad([4.0, 0.0, 4.0, 4.0], PaintRef::NONE));
-    tx.record_chunk(chunk);
-    assert_eq!(reject(&mut scene, tx), RejectReason::InvalidItem);
 }

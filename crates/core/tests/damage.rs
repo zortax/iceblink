@@ -195,17 +195,6 @@ fn an_effect_write_damages_the_subtrees_naming_it() {
 }
 
 #[test]
-fn a_root_write_damages_the_whole_output() {
-    let mut scene = Scene::new();
-    let mut tx = scene.tx();
-    let other = tx.create_order(OrderNode::default());
-    tx.set_root(scene.output, Some(other));
-    scene.commit(tx);
-    assert_eq!(scene.build(), Built::Frame);
-    assert!(scene.frame.damage.draw.is_full());
-}
-
-#[test]
 fn a_scroll_damages_old_and_new_ink_without_a_kept_target() {
     let mut scene = Scene::with_caps(iceblink::RenderCapabilities::MINIMAL);
     let mut tx = scene.tx();
@@ -363,20 +352,6 @@ fn new_capabilities_damage_the_whole_output() {
     scene.caps.custom_shaders = false;
     assert_eq!(scene.build(), Built::Frame);
     assert!(scene.frame.damage.draw.is_full());
-}
-
-#[test]
-fn a_recovered_device_damages_the_whole_next_frame() {
-    let mut scene = Scene::new();
-    scene.add_chunk(ChunkKey::new(1, 0), &[[10.0, 10.0, 20.0, 20.0]]);
-    assert_eq!(scene.build(), Built::Frame);
-    scene.done(FrameOutcome::Recovered);
-    assert_eq!(scene.build(), Built::Frame);
-    assert!(scene.frame.damage.draw.is_full());
-    assert!(
-        scene.frame.tables.spaces.replace,
-        "a new renderer gets every table"
-    );
 }
 
 #[test]

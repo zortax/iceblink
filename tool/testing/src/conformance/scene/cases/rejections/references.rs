@@ -1,14 +1,18 @@
 //! References that must resolve: live ids, recorded chunks and outputs, and removals only of
 //! objects nothing uses.
 
-use iceblink::{Color, OrderEntry, OutputId, Paint, PaintKind, RejectReason};
+use iceblink::{
+    Color, CommitError, IdSpace, OrderEntry, OrderNode, OutputId, Paint, PaintKind, RejectReason,
+    Transaction,
+};
 
 use crate::conformance::scene::MakeCompositor;
 use crate::conformance::scene::build::{identity, key, props, record_quads};
 use crate::conformance::scene::cases::rejections::{RED, quad_with, rejects};
 use crate::conformance::scene::stage::Stage;
 
-/// Every id a transaction refers to must be live with its current generation.
+/// Every id a transaction refers to must be live with its current generation, and minted by the
+/// id space the client registered with.
 pub fn stale_ids(make: MakeCompositor<'_>) {
     let mut stage = Stage::full(make);
     let mut tx = stage.tx();
@@ -36,6 +40,21 @@ pub fn stale_ids(make: MakeCompositor<'_>) {
         tx,
         RejectReason::StaleId,
         "a chunk referring to a removed paint",
+    );
+
+    // The client's ids come from the space it registered with, never from a new one.
+    let mut foreign = Transaction::new(IdSpace::new(stage.client));
+    foreign.create_order(OrderNode::default());
+    let result = stage.try_commit(foreign);
+    assert!(
+        matches!(
+            result,
+            Err(CommitError {
+                reason: RejectReason::StaleId,
+                ..
+            })
+        ),
+        "a transaction of a foreign id space: expected a rejection for StaleId, got {result:?}"
     );
 }
 

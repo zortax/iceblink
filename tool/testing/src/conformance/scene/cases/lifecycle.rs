@@ -26,6 +26,15 @@ pub fn frame_ids(make: MakeCompositor<'_>) {
         assert_eq!(stage.frame.id.0, last + 1, "frame ids increase by one");
         last = stage.frame.id.0;
     }
+
+    assert!(matches!(stage.build(), Built::Idle { .. }));
+    stage.add_quads(key(9), &[([90.0, 0.0, 8.0, 8.0], RED)]);
+    assert_eq!(stage.draw(), Built::Frame);
+    assert_eq!(
+        stage.frame.id.0,
+        last + 1,
+        "an idle build takes no frame id"
+    );
 }
 
 /// The damage of a frame that recorded nothing is drawn by the next frame.
