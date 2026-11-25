@@ -2,7 +2,7 @@
 
 use iceblink::{
     ChunkKey, ClipId, Color, EffectId, FontId, ImageId, OrderEntry, OrderId, Paint, PaintId,
-    PaintKind, PaintRef, ScrollId, Transaction, TransformId,
+    PaintKind, ScrollId, Transaction, TransformId,
 };
 
 use crate::common::props;
@@ -84,6 +84,3 @@ impl World {
         }
     }
 }
-
-/// A paint reference to nothing.
-pub(crate) const NO_PAINT: PaintRef = PaintRef::NONE;

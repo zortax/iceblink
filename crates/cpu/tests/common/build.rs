@@ -377,12 +377,6 @@ impl FrameBuilder {
         self.frame
     }
 
-    /// Moves the kept pixels of `region` by `by` before the damage is drawn.
-    pub(crate) fn shift(&mut self, region: DeviceRect, by: [i32; 2]) -> &mut Self {
-        self.frame.shifts.push(iceblink::Shift { region, by });
-        self
-    }
-
     /// Sets the frame's id.
     pub(crate) fn id(&mut self, id: u64) -> &mut Self {
         self.frame.id = iceblink::FrameId(id);
