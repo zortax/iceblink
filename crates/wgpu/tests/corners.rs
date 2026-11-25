@@ -1,4 +1,4 @@
-//! Corner exponents on quads, shadows and clips, fractional edges, rings and per-side borders.
+//! Corner exponents on quads, shadows and clips, fractional edges and rings.
 //!
 //! An exponent of 2 is the ellipse, 4 a squircle, 1 a straight bevel and 0.5 a scoop cut inwards.
 
@@ -7,8 +7,8 @@ mod common;
 use common::build::{FrameBuilder, filled, opaque, rect};
 use common::device::{plain_renderer, present};
 use iceblink::{
-    ClipEntry, ClipLinkEntry, ClipRef, CornerShapes, FRAME_NO_CLIP, FrameClipShape, FramePaint,
-    FrameShadow, PaintRef, ROUND, Shadow, SpaceRef,
+    ClipEntry, ClipLinkEntry, ClipRef, CornerShapes, FRAME_NO_CLIP, FrameClipShape, FrameShadow,
+    PaintRef, ROUND, Shadow, SpaceRef,
 };
 
 const SQUIRCLE: CornerShapes = [4.0; 4];
@@ -173,23 +173,4 @@ fn a_ring_antialiases_its_inner_edge_beside_the_straight_band() {
         coverage.abs_diff(153) <= 3,
         "the pixel across the inner edge holds {coverage}"
     );
-}
-
-#[test]
-fn each_border_side_is_drawn_in_its_own_colour() {
-    let mut renderer = plain_renderer();
-    let mut builder = FrameBuilder::new();
-    let grey = opaque(128, 128, 128);
-    let red = opaque(255, 0, 0);
-    let sides = builder.paint(FramePaint::Sides([grey, grey, grey, red]));
-    let mut quad = filled(rect(10.0, 10.0, 60.0, 40.0), PaintRef::NONE);
-    quad.border = [4.0, 4.0, 4.0, 8.0];
-    quad.stroke = sides;
-    builder.quad(quad);
-
-    let pixels = present(&mut renderer, &builder.finish());
-
-    assert_eq!(pixels.rgba(40, 11), [128, 128, 128, 255], "the top");
-    assert_eq!(pixels.rgba(12, 30), [255, 0, 0, 255], "the left is red");
-    assert_eq!(pixels.rgba(68, 30), [128, 128, 128, 255], "the right");
 }

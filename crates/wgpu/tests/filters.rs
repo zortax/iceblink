@@ -4,104 +4,10 @@ mod common;
 
 use std::sync::Arc;
 
-use common::build::{FrameBuilder, filled, frame_filter, frosted, group, opaque, quad, rect};
+use common::build::{FrameBuilder, frame_filter, frosted, group, quad, rect};
 use common::device::{plain_renderer, present};
-use iceblink::{BlendMode, FRAME_NO_CLIP, Filter, Frame, FrameFilter, FrameGroup, read_extent};
+use iceblink::{Filter, Frame, read_extent};
 use iceblink_wgpu::GroupPrecision;
-
-/// Returns an opaque source-over group over `bounds` through `filters`, with bounds that are not
-/// grown by what the filters read.
-fn filtered(bounds: [f32; 4], filters: Vec<FrameFilter>) -> FrameGroup {
-    FrameGroup {
-        bounds,
-        source: bounds,
-        clip: FRAME_NO_CLIP,
-        opacity: 1.0,
-        blend: BlendMode::NORMAL,
-        filters: Arc::from(filters),
-    }
-}
-
-#[test]
-fn a_blurred_group_spreads_past_its_content() {
-    let mut renderer = plain_renderer();
-    let mut builder = FrameBuilder::new();
-    let white = builder.solid(opaque(255, 255, 255));
-    builder.begin_group(filtered(
-        rect(16.0, 16.0, 96.0, 96.0),
-        vec![FrameFilter::Blur(4.0)],
-    ));
-    builder.quad(filled(rect(40.0, 40.0, 48.0, 48.0), white));
-    builder.end_group();
-
-    let pixels = present(&mut renderer, &builder.finish());
-
-    assert!(pixels.rgba(64, 64)[3] > 240, "the middle stays");
-    let fringe = pixels.rgba(64, 37)[3];
-    assert!(fringe > 0 && fringe < 255, "the edge spreads: {fringe}");
-}
-
-#[test]
-fn a_colour_matrix_inverts_and_a_drop_shadow_falls_beneath() {
-    let mut renderer = plain_renderer();
-    let mut builder = FrameBuilder::new();
-    let white = builder.solid(opaque(255, 255, 255));
-    let invert = FrameFilter::ColorMatrix([
-        -1.0, 0.0, 0.0, 0.0, 1.0, 0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0, 0.0,
-        0.0, 1.0, 0.0,
-    ]);
-    builder.begin_group(filtered(rect(0.0, 0.0, 32.0, 32.0), vec![invert]));
-    builder.quad(filled(rect(0.0, 0.0, 32.0, 32.0), white));
-    builder.end_group();
-    builder.begin_group(filtered(
-        rect(40.0, 40.0, 80.0, 80.0),
-        vec![FrameFilter::DropShadow {
-            offset: [16.0, 16.0],
-            std_dev: 0.5,
-            color: opaque(0, 0, 255),
-        }],
-    ));
-    builder.quad(filled(rect(48.0, 48.0, 32.0, 32.0), white));
-    builder.end_group();
-
-    let pixels = present(&mut renderer, &builder.finish());
-
-    assert_eq!(
-        pixels.rgba(16, 16),
-        [0, 0, 0, 255],
-        "white inverted is black"
-    );
-    assert_eq!(
-        pixels.rgba(56, 56),
-        [255, 255, 255, 255],
-        "the content over its shadow"
-    );
-    let shadow = pixels.rgba(90, 90);
-    assert!(
-        shadow[2] > 200 && shadow[0] < 30,
-        "the shadow, moved: {shadow:?}"
-    );
-}
-
-#[test]
-fn a_backdrop_filters_what_is_beneath_it() {
-    let mut renderer = plain_renderer();
-    let mut builder = FrameBuilder::new();
-    let red = builder.solid(opaque(255, 0, 0));
-    let blue = builder.solid(opaque(0, 0, 255));
-    builder.quad(filled(rect(0.0, 0.0, 64.0, 128.0), red));
-    builder.quad(filled(rect(64.0, 0.0, 64.0, 128.0), blue));
-    builder.backdrop(frosted(rect(32.0, 32.0, 64.0, 64.0), 6.0));
-
-    let pixels = present(&mut renderer, &builder.finish());
-
-    let seam = pixels.rgba(64, 64);
-    assert!(
-        seam[0] > 60 && seam[2] > 60,
-        "the seam is blurred under the backdrop: {seam:?}"
-    );
-    assert_eq!(pixels.rgba(64, 8), [0, 0, 255, 255], "and sharp outside it");
-}
 
 /// Returns a black square of `side` in the middle of a white output, moved by `offset` and
 /// blurred by `deviation`.

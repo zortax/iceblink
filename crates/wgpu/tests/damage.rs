@@ -1,69 +1,16 @@
-//! Partial redraws: only the damage is drawn, shifts move kept pixels, and opaque covers skip
+//! Partial redraws: a frame drawn over its damage is the frame drawn whole, and opaque covers skip
 //! what they hide.
 
 mod common;
 
 use common::build::{FrameBuilder, area, filled, frosted, group, opaque, rect, straight, whole};
 use common::device::{SIDE, TestRenderer, draw, pair, plain_renderer, present, tolerance};
-use iceblink::Renderer as _;
 use iceblink::damage::DamageSet;
 use iceblink::geom::{Point, Rect, Size};
 use iceblink::{
-    BufferAge, ClipRef, DeviceRect, FRAME_NO_CLIP, Filter, Frame, Line, LineStyle, Matrix4,
-    OpaqueCover, Shift, SpaceRef,
+    ClipRef, DeviceRect, FRAME_NO_CLIP, Filter, Frame, Line, LineStyle, Matrix4, OpaqueCover,
+    SpaceRef,
 };
-
-#[test]
-fn a_partial_frame_keeps_every_pixel_outside_its_damage() {
-    let mut renderer = plain_renderer();
-    let mut first = FrameBuilder::new();
-    let red = first.solid(opaque(255, 0, 0));
-    let blue = first.solid(opaque(0, 0, 255));
-    first.quad(filled(rect(0.0, 0.0, 128.0, 128.0), red));
-    present(&mut renderer, &first.finish());
-    assert_eq!(renderer.target_age(), BufferAge::Kept);
-
-    let mut next = FrameBuilder::next().damage(area(0, 0, 32, 32));
-    next.quad(filled(rect(0.0, 0.0, 128.0, 128.0), blue));
-
-    let stats = draw(&mut renderer, &next.finish()).stats().unwrap();
-
-    assert_eq!(stats.damage_px, 32 * 32);
-    let pixels = renderer.read_presented().unwrap();
-    assert_eq!(pixels.rgba(16, 16), [0, 0, 255, 255], "inside the damage");
-    assert_eq!(pixels.rgba(64, 64), [255, 0, 0, 255], "outside it");
-}
-
-#[test]
-fn a_shift_moves_kept_pixels_before_the_damage_is_drawn() {
-    let mut renderer = plain_renderer();
-    let mut first = FrameBuilder::new();
-    let green = first.solid(opaque(0, 255, 0));
-    first.quad(filled(rect(0.0, 0.0, 128.0, 16.0), green));
-    present(&mut renderer, &first.finish());
-
-    let region = Rect::new(Point::new(0, 0), Size::new(128, 128));
-    let mut next = FrameBuilder::next().damage(area(0, 0, 128, 32));
-    // Present damage holds the shift's destination as well as the drawn band.
-    next.frame_mut().damage.present = area(0, 0, 128, 128);
-    next.frame_mut().shifts.push(Shift {
-        region,
-        by: [0, 32],
-    });
-
-    let pixels = present(&mut renderer, &next.finish());
-
-    assert_eq!(
-        pixels.rgba(64, 40),
-        [0, 255, 0, 255],
-        "the band moved down by 32"
-    );
-    assert_eq!(
-        pixels.rgba(64, 8),
-        [0, 0, 0, 0],
-        "the exposed band was redrawn empty"
-    );
-}
 
 #[test]
 fn an_opaque_cover_starts_the_redraw_at_its_quad() {

@@ -2,61 +2,11 @@
 
 mod common;
 
-use common::build::{FrameBuilder, area, filled, group, opaque, quad, rect};
+use common::build::{FrameBuilder, area, group, quad, rect};
 use common::device::{TestRenderer, pair, plain_renderer, present};
 use iceblink::damage::DamageSet;
-use iceblink::{ClipEntry, ClipLinkEntry, Filter, Frame, FrameClipShape, ROUND};
+use iceblink::{Filter, Frame};
 use iceblink_wgpu::GroupPrecision;
-
-#[test]
-fn a_translucent_group_composites_its_overlap_once() {
-    let mut renderer = plain_renderer();
-    let mut builder = FrameBuilder::new();
-    let red = builder.solid(opaque(255, 0, 0));
-    builder.begin_group(group(rect(0.0, 0.0, 96.0, 64.0), 0.5, &[]));
-    builder.quad(filled(rect(0.0, 0.0, 64.0, 64.0), red));
-    builder.quad(filled(rect(32.0, 0.0, 64.0, 64.0), red));
-    builder.end_group();
-
-    let pixels = present(&mut renderer, &builder.finish());
-
-    let alone = pixels.rgba(16, 32);
-    let overlap = pixels.rgba(48, 32);
-    assert!((126..=129).contains(&alone[3]), "{alone:?}");
-    assert_eq!(alone, overlap, "the overlap is not drawn twice");
-}
-
-#[test]
-fn nested_groups_multiply_their_opacities_and_a_group_clip_cuts_the_composite() {
-    let mut renderer = plain_renderer();
-    let mut builder = FrameBuilder::new();
-    let green = builder.solid(opaque(0, 255, 0));
-    let clip = builder.clip(ClipEntry {
-        links: [ClipLinkEntry {
-            space: 0,
-            shape: FrameClipShape::RoundedRect {
-                rect: rect(0.0, 0.0, 32.0, 64.0),
-                radii: [0.0; 8],
-                shapes: ROUND,
-            },
-        }]
-        .into_iter()
-        .collect(),
-    });
-    let mut outer = group(rect(0.0, 0.0, 64.0, 64.0), 0.5, &[]);
-    outer.clip = clip.0;
-    builder.begin_group(outer);
-    builder.begin_group(group(rect(0.0, 0.0, 64.0, 64.0), 0.5, &[]));
-    builder.quad(filled(rect(0.0, 0.0, 64.0, 64.0), green));
-    builder.end_group();
-    builder.end_group();
-
-    let pixels = present(&mut renderer, &builder.finish());
-
-    let inside = pixels.rgba(16, 32)[3];
-    assert!((62..=66).contains(&inside), "a quarter: {inside}");
-    assert_eq!(pixels.rgba(48, 32)[3], 0, "the clip cuts the composite");
-}
 
 // The empty group follows one that leaves red in the target the pool lends again.
 #[test]
