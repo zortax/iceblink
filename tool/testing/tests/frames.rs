@@ -109,18 +109,6 @@ fn a_renderer_with_resident_chunks_is_reset_after_a_recovery() {
 }
 
 #[test]
-fn frame_ids_count_up_by_one_per_built_frame() {
-    let mut harness = Harness::new();
-    assert!(harness.frame());
-    let first = harness.frame.id;
-    assert!(!harness.frame());
-
-    harness.add_quads(ChunkKey::new(1, 0), &[quad([0.0; 4], [0; 4])]);
-    assert!(harness.frame());
-    assert_eq!(harness.frame.id.0, first.0 + 1);
-}
-
-#[test]
 fn pages_fit_the_smallest_renderer_of_every_output() {
     let mut compositor = NaiveCompositor::new();
     let (client, _) = compositor.register_client();

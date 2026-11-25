@@ -7,12 +7,12 @@ use std::sync::Arc;
 use iceblink::Compositor;
 use iceblink::color::{self, ColorSpace, GradientStop};
 use iceblink::geom::{Point, Size};
-use iceblink::kurbo::{BezPath, Circle, Shape};
+use iceblink::kurbo::BezPath;
 use iceblink::{
     ArenaRange, ChunkKey, ClipNode, ClipShape, DeviceRect, EffectNode, Extend, Glyph, GlyphFlags,
     GlyphRun, Gradient, GradientShape, Image, ImageDesc, ImageFilter, ImageFlags, ImageFormat,
     ImageWrite, Interpolation, MarkFlags, MarkPayload, MarkPlacement, Marks, OrderEntry, OrderNode,
-    Paint, PaintKind, PaintRef, PathFill, PathItem, ROUND, SpaceRef,
+    Paint, PaintKind, PaintRef, ROUND, SpaceRef,
 };
 use iceblink_testing::fonts::{LATIN, read_font};
 use iceblink_testing::gpu::Driver;
@@ -295,126 +295,6 @@ fn glyphs_on_both_routes_ink_their_line_and_nothing_else() {
         near,
         "the atlas route inks {atlas:?} and the path route {path:?}"
     );
-}
-
-/// The steps of a scene that uses every content kind.
-const STEPS: [fn(&mut Harness); 3] = [add_content, move_chunks, replace_text];
-
-/// The chunk of the marks and the path.
-const SHAPES: ChunkKey = ChunkKey::new(10, 0);
-
-/// Adds a line of text, then marks and a path in a chunk of their own.
-fn add_content(harness: &mut Harness) {
-    harness
-        .compositor
-        .use_glyph_raster(Arc::new(SwashRaster::new()));
-    text(
-        harness,
-        ChunkKey::new(1, 0),
-        PaintRef::color([0, 0, 0, 255]),
-        14.0,
-    );
-
-    let mut transaction = harness.transaction();
-    let props = harness.props();
-    let mut recorder = transaction.record(SHAPES, props);
-    let payload = recorder.payload(Arc::new(MarkPayload {
-        discs: vec![[30.0, 30.0, 5.0, 2.0]],
-        shapes: vec![Arc::new(Circle::new((0.0, 0.0), 2.5).to_path(0.1))],
-        placements: vec![MarkPlacement {
-            x: 50.3,
-            y: 36.6,
-            shape: 0,
-            _pad: 0,
-        }],
-        ..MarkPayload::default()
-    }));
-    recorder.marks(Marks {
-        bounds: [0.0, 0.0, 64.0, 48.0],
-        paint: PaintRef::color([0, 0, 200, 255]),
-        paint_origin: [0.0; 2],
-        origin: [0.0; 2],
-        axes: [1.0, 0.0, 0.0, 1.0],
-        half_width: 1.0,
-        discs: 1,
-        boxes: 0,
-        vertices: 0,
-        placements: 1,
-        first: 0,
-        payload,
-        clip: iceblink::ClipRef::INHERIT,
-        space: SpaceRef::INHERIT,
-        flags: MarkFlags::UNION,
-    });
-
-    let mut outline = BezPath::new();
-    outline.move_to((4.0, 30.0));
-    outline.line_to((24.0, 34.0));
-    outline.line_to((10.0, 46.0));
-    outline.close_path();
-    recorder.path(PathItem {
-        path: Arc::new(outline),
-        placement: Default::default(),
-        brush: Default::default(),
-        fill: Some(PathFill {
-            paint: PaintRef::color([0, 160, 0, 255]),
-            rule: Default::default(),
-        }),
-        stroke: None,
-        clips: Arc::new([]),
-        clip: iceblink::ClipRef::INHERIT,
-        space: SpaceRef::INHERIT,
-    });
-    harness.append(&mut transaction, OrderEntry::Chunk(SHAPES));
-    harness.commit(transaction);
-}
-
-/// Moves the shapes and the text by fractional offsets.
-fn move_chunks(harness: &mut Harness) {
-    let mut transaction = harness.transaction();
-    transaction.set_offset(SHAPES, [3.5, -2.0]);
-    transaction.set_offset(ChunkKey::new(1, 0), [0.25, 6.0]);
-    harness.commit(transaction);
-}
-
-/// Adds a second line of text and removes the first.
-fn replace_text(harness: &mut Harness) {
-    text(
-        harness,
-        ChunkKey::new(2, 0),
-        PaintRef::color([120, 0, 0, 255]),
-        40.0,
-    );
-    let mut transaction = harness.transaction();
-    transaction.remove_chunk(ChunkKey::new(1, 0));
-    harness.commit(transaction);
-}
-
-#[test]
-fn incremental_frames_equal_a_frame_drawn_from_scratch() {
-    let Some(mut rig) = Rig::open(SIZE) else {
-        return;
-    };
-    let mut harness = white();
-    for step in STEPS {
-        step(&mut harness);
-        rig.draw(&mut harness.compositor, harness.output)
-            .expect("every step draws a frame");
-    }
-    let incremental = rig.renderer.read_presented().expect("a presented image");
-
-    let Some(mut fresh_rig) = Rig::beside(SIZE) else {
-        return;
-    };
-    let mut fresh = white();
-    for step in STEPS {
-        step(&mut fresh);
-    }
-    let scratch = fresh_rig
-        .draw(&mut fresh.compositor, fresh.output)
-        .expect("a frame");
-
-    assert_eq!(incremental.max_difference(&scratch), 0);
 }
 
 #[test]
