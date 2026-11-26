@@ -55,6 +55,7 @@ impl Gpu {
     ) -> Result<Self, String> {
         let descriptor = descriptor(&adapter);
         let extensions = with_presenter(&adapter, extensions, swap_chain);
+        let opening = adapter::opening();
         let (device, queue, extensions) = match extensions::open(&adapter, &extensions, &descriptor)
         {
             Some(opened) => opened,
@@ -65,6 +66,7 @@ impl Gpu {
                 (device, queue, Vec::new())
             }
         };
+        drop(opening);
         Ok(Self::opened(instance, adapter, device, queue, extensions))
     }
 

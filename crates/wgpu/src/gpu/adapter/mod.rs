@@ -4,6 +4,7 @@ mod backends;
 mod instances;
 
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Mutex, MutexGuard, PoisonError};
 
 use iceblink::GpuUnavailable;
 
@@ -19,6 +20,14 @@ static GL_ENUMERATIONS: AtomicU64 = AtomicU64::new(0);
 /// Returns how many times GL adapters were enumerated in this process.
 pub fn gl_enumerations() -> u64 {
     GL_ENUMERATIONS.load(Ordering::Relaxed)
+}
+
+/// Takes the lock that lets one thread at a time create an instance, enumerate adapters or create
+/// a device.
+pub(crate) fn opening() -> MutexGuard<'static, ()> {
+    // NVIDIA's Vulkan driver (610.43) crashed when threads did these at once.
+    static OPENING: Mutex<()> = Mutex::new(());
+    OPENING.lock().unwrap_or_else(PoisonError::into_inner)
 }
 
 /// Returns the device id in [`DEVICE_ID_VARIABLE`], in decimal or in hexadecimal after `0x`.
@@ -76,7 +85,10 @@ pub(crate) fn candidates(
         GL_ENUMERATIONS.fetch_add(1, Ordering::Relaxed);
     }
     let preferred = preferred_device_id();
-    let mut adapters = futures::executor::block_on(instance.enumerate_adapters(backends));
+    let mut adapters = {
+        let _opening = opening();
+        futures::executor::block_on(instance.enumerate_adapters(backends))
+    };
     adapters.sort_by_key(|adapter| sort_key(&adapter.get_info(), preferred));
     adapters
 }

@@ -1,7 +1,7 @@
 //! The instances adapters are enumerated from, one per backend tier.
 
-use std::sync::OnceLock;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Mutex, OnceLock, PoisonError};
 
 use crate::gpu::adapter::tiers;
 
@@ -44,15 +44,41 @@ impl Instances {
     /// Returns the instance of the first tier.
     pub(crate) fn primary(&self) -> &wgpu::Instance {
         let (tier, instance) = &self.tiers[0];
-        instance.get_or_init(|| create(*tier))
+        instance.get_or_init(|| instance_of(*tier))
     }
 
     /// Returns each tier's backends and instance, in order.
     pub(crate) fn iter(&self) -> impl Iterator<Item = (wgpu::Backends, &wgpu::Instance)> {
         self.tiers
             .iter()
-            .map(|(tier, instance)| (*tier, instance.get_or_init(|| create(*tier))))
+            .map(|(tier, instance)| (*tier, instance.get_or_init(|| instance_of(*tier))))
     }
+}
+
+/// Returns an instance of `backends`.
+///
+/// A GL instance is new on every call. Every other instance is shared by the whole process and
+/// created on first use.
+fn instance_of(backends: wgpu::Backends) -> wgpu::Instance {
+    if backends.intersects(wgpu::Backends::GL) {
+        // A GL instance owns an EGL context, which threads cannot make current at the same time.
+        let _opening = super::opening();
+        return create(backends);
+    }
+    // The shared instances are never destroyed. Destroying the last Vulkan instance unloads the
+    // driver, and a thread creating an instance meanwhile crashed in the NVIDIA ICD (driver
+    // 610.43, loader 1.4.350).
+    static SHARED: Mutex<Vec<(wgpu::Backends, wgpu::Instance)>> = Mutex::new(Vec::new());
+    let mut shared = SHARED.lock().unwrap_or_else(PoisonError::into_inner);
+    if let Some((_, instance)) = shared.iter().find(|(tier, _)| *tier == backends) {
+        return instance.clone();
+    }
+    let instance = {
+        let _opening = super::opening();
+        create(backends)
+    };
+    shared.push((backends, instance.clone()));
+    instance
 }
 
 /// Creates an instance of `backends`.
